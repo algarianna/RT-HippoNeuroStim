@@ -285,22 +285,23 @@ class Pospischil:
             
     # Na ---------------------------------------------------------------------
     # m
-    def alpha_m_Na(self, v) -> np.longdouble: return ((-0.32*(v-self.V_T-13)) / (exp(-(v-self.V_T-13)/4)-1))
-    def  beta_m_Na(self, v) -> np.longdouble: return ((+0.28*(v-self.V_T-40)) / (exp((v-self.V_T-40)/5)-1))
+    def alpha_m_Na(self, v) -> np.longdouble: return ((-0.32*(v-self.V_T-42)) / (exp(-(v-self.V_T-42)/4)-1)) # v-self.V_T = V_m?
+    def beta_m_Na(self, v) -> np.longdouble: return ((+0.28*(v-self.V_T+15)) / (exp((v-self.V_T+15)/5)-1))
     def  calc_m_Na(self, v, mpre, dt) -> np.float64: 
         dx = self.alpha_m_Na(v)*(1-mpre) - self.beta_m_Na(v)*mpre
         return forwardEuler(dx, mpre, dt)
+    
     # h
-    def alpha_h_Na(self, v)-> np.longdouble: return 0.128*exp(-(v-self.V_T-17)/18)
-    def  beta_h_Na(self, v)-> np.longdouble: return 4/(1+exp(-(v-self.V_T-40)/5))
+    def alpha_h_Na(self, v)-> np.longdouble: return 0.128*exp(-(v-self.V_T-+38)/18)
+    def beta_h_Na(self, v)-> np.longdouble: return 4/(1+exp(-(v-self.V_T+15)/5))
     def  calc_h_Na(self, v, hpre, dt)-> np.float64: 
         dx = self.alpha_h_Na(v)*(1-hpre) - self.beta_h_Na(v)*hpre
         return forwardEuler(dx, hpre, dt)
 
     # K ---------------------------------------------------------------------
-    # m
-    def alpha_m_K(self, v)-> np.longdouble: return (-0.035*(v-self.V_T-15)) / (exp(-(v-self.V_T-15)/5)-1)
-    def  beta_m_K(self, v)-> np.longdouble: return 0.5*exp(-(v-self.V_T-10)/40)
+    # m on n?
+    def alpha_m_K(self, v)-> np.longdouble: return (-0.032*(v-self.V_T+40)) / (exp(-0.02(v-self.V_T+40)))
+    def  beta_m_K(self, v)-> np.longdouble: return 0.5*exp(-(v-self.V_T+45)/40)
     def  calc_m_K(self, v, mpre, dt)-> np.float64:
         dx = self.alpha_m_K(v)*(1-mpre) - self.beta_m_K(v)*mpre
         return forwardEuler(dx, mpre, dt)
