@@ -294,22 +294,22 @@ class Pospischil:
     # h
     def alpha_h_Na(self, v)-> np.longdouble: return 0.128*exp(-(v-self.V_T-+38)/18)
     def beta_h_Na(self, v)-> np.longdouble: return 4/(1+exp(-(v-self.V_T+15)/5))
-    def  calc_h_Na(self, v, hpre, dt)-> np.float64: 
+    def calc_h_Na(self, v, hpre, dt)-> np.float64: 
         dx = self.alpha_h_Na(v)*(1-hpre) - self.beta_h_Na(v)*hpre
         return forwardEuler(dx, hpre, dt)
 
     # K ---------------------------------------------------------------------
-    # m on n?
+    # m or n?
     def alpha_m_K(self, v)-> np.longdouble: return (-0.032*(v-self.V_T+40)) / (exp(-0.02(v-self.V_T+40)))
-    def  beta_m_K(self, v)-> np.longdouble: return 0.5*exp(-(v-self.V_T+45)/40)
-    def  calc_m_K(self, v, mpre, dt)-> np.float64:
+    def beta_m_K(self, v)-> np.longdouble: return 0.5*exp(-(v-self.V_T+45)/40)
+    def calc_m_K(self, v, mpre, dt)-> np.float64:
         dx = self.alpha_m_K(v)*(1-mpre) - self.beta_m_K(v)*mpre
         return forwardEuler(dx, mpre, dt)
 
     # M ---------------------------------------------------------------------
     # m_M
-    def   xinf_M(self, v)-> np.longdouble: return 1.0/(1.0+exp(-(v+35.0)/10.0))
-    def   taux_M(self, v)-> np.longdouble: return self.TAU_MAX/(3.3*exp((v+35.0)/20.0) + exp(-(v+35.0)/20.0))
+    def xinf_M(self, v)-> np.longdouble: return 1.0/(1.0+exp(-(v+35.0)/10.0))
+    def taux_M(self, v)-> np.longdouble: return self.TAU_MAX/(3.3*exp((v+35.0)/20.0) + exp(-(v+35.0)/20.0))
     def calc_m_M(self, v, mpre, dt)-> np.float64:
         dx = (self.xinf_M(v)-mpre)/self.taux_M(v)
         return forwardEuler(dx, mpre, dt)
@@ -317,14 +317,14 @@ class Pospischil:
     # L ---------------------------------------------------------------------
     # m (q)
     def alpha_m_L(self, v)-> np.longdouble: return 0.055*(-27-v) / (exp((-27-v)/3.8) - 1)
-    def  beta_m_L(self, v)-> np.longdouble: return 0.94*exp((-75-v)/17)
-    def  calc_m_L(self, v, mpre, dt)-> np.float64: 
+    def beta_m_L(self, v)-> np.longdouble: return 0.94*exp((-75-v)/17)
+    def calc_m_L(self, v, mpre, dt)-> np.float64: 
         dx = self.alpha_m_L(v)*(1-mpre) - self.beta_m_L(v)*mpre
         return forwardEuler(dx, mpre, dt)
     # h (r)
     def alpha_h_L(self,v)-> np.longdouble: return 0.000457*exp((-13.0-v)/50.0)
-    def  beta_h_L(self,v)-> np.longdouble: return 0.0065 / (exp((-15.0-v)/28.0) + 1.0)
-    def  calc_h_L(self, v, hpre, dt)-> np.float64:
+    def beta_h_L(self,v)-> np.longdouble: return 0.0065 / (exp((-15.0-v)/28.0) + 1.0)
+    def calc_h_L(self, v, hpre, dt)-> np.float64:
         dx = self.alpha_h_L(v)*(1-hpre) - self.beta_h_L(v)*hpre
         return forwardEuler(dx, hpre, dt)
     

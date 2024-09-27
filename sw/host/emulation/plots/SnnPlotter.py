@@ -15,7 +15,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from configuration.file_managers.HwConfigFile import *
-from configuration.neurons.Ionrates  import RATE_VMIN, RATE_VMAX, RATE_STEP, RATE_TABLE_SIZE
+from sw.host.configuration.neurons.Ionrates_pyramidal  import RATE_VMIN, RATE_VMAX, RATE_STEP, RATE_TABLE_SIZE
 from emulation.hh_snn.SnnEmulator import *
 
 class SnnPlotter:
