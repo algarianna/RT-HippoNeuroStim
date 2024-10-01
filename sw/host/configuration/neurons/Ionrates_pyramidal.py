@@ -299,7 +299,7 @@ class Pospischil:
         return forwardEuler(dx, hpre, dt)
 
     # K ---------------------------------------------------------------------
-    # m or n?
+    # m
     def alpha_m_K(self, v)-> np.longdouble: return (-0.032*(v-self.V_T+40)) / (exp(-0.02(v-self.V_T+40)))
     def beta_m_K(self, v)-> np.longdouble: return 0.5*exp(-(v-self.V_T+45)/40)
     def calc_m_K(self, v, mpre, dt)-> np.float64:
@@ -315,6 +315,7 @@ class Pospischil:
         return forwardEuler(dx, mpre, dt)
 
     # L ---------------------------------------------------------------------
+    # high threshold Ca current (Reuveni)
     # m (q)
     def alpha_m_L(self, v)-> np.longdouble: return 0.055*(-27-v) / (exp((-27-v)/3.8) - 1)
     def beta_m_L(self, v)-> np.longdouble: return 0.94*exp((-75-v)/17)
@@ -329,6 +330,7 @@ class Pospischil:
         return forwardEuler(dx, hpre, dt)
     
     # T ---------------------------------------------------------------------
+    # low threshold Ca current modeling burst
     # m (directly correspond to r2)
     def xinf_T_m(self, v)-> np.longdouble: return 1 / (1 + exp(-(v+self.V_X+57)/6.2))
     def calc_m_T(self, v, mpre, dt) -> np.float64:
