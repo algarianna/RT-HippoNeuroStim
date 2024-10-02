@@ -17,8 +17,8 @@ from tqdm import tqdm
 
 from configuration.file_managers.HwConfigFile       import *
 from configuration.file_managers.SwConfigFile       import *
-from configuration.synapses.Synapses           import Synapses
-from NeuronHH           import NeuronHH
+from configuration.synapses.Synapses                import Synapses
+from NeuronHH                                       import NeuronHH
 from emulation.hh_snn.SnnEmulator        import SnnEmulator
 from configuration.network_models.OrgStructures   import OrganoidEmulator
 

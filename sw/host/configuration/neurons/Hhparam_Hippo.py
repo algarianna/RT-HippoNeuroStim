@@ -20,7 +20,6 @@ class Hhparam:
         "G_Na":0, 
         "G_Kd":1, 
         "G_M":2,
-        "G_L":3,
         "G_T":4,
         "G_Leak":5,
         "E_Na":6,
@@ -197,6 +196,83 @@ class Hhparam:
             if not("nostim" in nt):
                 hhparam[self.PID["i_stim"]]  = 0.03         # (mA/cm²)
             hhparam[self.PID["v_init"]]      = -70.0         # (mV)
+
+        elif nt[0] == "PYR": # parameters from Vardalakis et al.
+                    cmem                             = 1.0           # (µF/cm²)
+                    area_cm2                         = 2.9103e-7     # (cm²)
+                    hhparam[self.PID["G_Na"]]        = 50e-3         # (S/cm²)
+                    hhparam[self.PID["G_Kd"]]        = 5e-3          # (S/cm²)
+                    hhparam[self.PID["G_M"]]         = 90e-6         # (S/cm²)
+                    hhparam[self.PID["G_L"]]         = 0.1e-3        # (S/cm²) G_Ca in Vardalakis
+                    hhparam[self.PID["G_T"]]         = 25e-6         # (S/cm²) G_CAN ? in Vardalakis
+                    hhparam[self.PID["G_Leak"]]      = 0.01e-3       # (S/cm²)
+                    hhparam[self.PID["E_Na"]]        = +50.0         # (mV)
+                    hhparam[self.PID["E_K"]]         = -100.0        # (mV)
+                    hhparam[self.PID["E_Ca"]]        = 0.0           # (mV)
+                    hhparam[self.PID["E_Leak"]]      = -70.0         # (mV)
+                    hhparam[self.PID["E_M"]]         = -100.0         # (mV)
+                    hhparam[self.PID["E_L"]]         = +120.0         # (mV)
+                    hhparam[self.PID["E_T"]]         = -20.0         # (mV)
+                    
+                    if not("nonoise" in nt):
+                        hhparam[self.PID["mu"]]      = 0.048         # 0.05
+                        hhparam[self.PID["theta"]]   = 8.0           # 8.0
+                        hhparam[self.PID["sigma"]]   = 0.11          # 0.1
+                    if not("nostim" in nt):
+                        hhparam[self.PID["i_stim"]]  = 0.01/3 # 0.0075 # 0.03          # (mA/cm²)
+                    hhparam[self.PID["v_init"]]      = -70.0         # (mV)
+        
+        elif nt[0] == "PYR": # parameters from Vardalakis et al.
+                cmem                             = 1.0           # (µF/cm²)
+                area_cm2                         = 2.9103e-7     # (cm²)
+                hhparam[self.PID["G_Na"]]        = 50e-3         # (S/cm²)
+                hhparam[self.PID["G_Kd"]]        = 5e-3          # (S/cm²)
+                hhparam[self.PID["G_M"]]         = 90e-6         # (S/cm²)
+                hhparam[self.PID["G_L"]]         = 0.1e-3        # (S/cm²) G_Ca in Vardalakis
+                hhparam[self.PID["G_T"]]         = 25e-6         # (S/cm²) G_CAN ? in Vardalakis
+                hhparam[self.PID["G_Leak"]]      = 0.01e-3       # (S/cm²)
+                hhparam[self.PID["E_Na"]]        = +50.0         # (mV)
+                hhparam[self.PID["E_K"]]         = -100.0        # (mV)
+                hhparam[self.PID["E_Ca"]]        = 0.0           # (mV)
+                hhparam[self.PID["E_Leak"]]      = -70.0         # (mV)
+                hhparam[self.PID["E_M"]]         = -100.0         # (mV)
+                hhparam[self.PID["E_L"]]         = +120.0         # (mV)
+                hhparam[self.PID["E_T"]]         = -20.0         # (mV)
+                
+                if not("nonoise" in nt):
+                    hhparam[self.PID["mu"]]      = 0.048         # 0.05
+                    hhparam[self.PID["theta"]]   = 8.0           # 8.0
+                    hhparam[self.PID["sigma"]]   = 0.11          # 0.1
+                if not("nostim" in nt):
+                    hhparam[self.PID["i_stim"]]  = 0.01/3 # 0.0075 # 0.03          # (mA/cm²)
+                hhparam[self.PID["v_init"]]      = -70.0         # (mV)
+
+        elif nt[0] == "INT": # parameters from Vardalakis et al.
+                cmem                             = 1.0           # (µF/cm²)
+                area_cm2                         = 2.9103e-7     # (cm²)
+                hhparam[self.PID["G_Na"]]        = 35e-3         # (S/cm²)
+                hhparam[self.PID["G_Kd"]]        = 9e-3          # (S/cm²)
+                # hhparam[self.PID["G_M"]]         = 90e-6         # (S/cm²)
+                # hhparam[self.PID["G_L"]]         = 0.1e-3        # (S/cm²) G_Ca in Vardalakis
+                # hhparam[self.PID["G_T"]]         = 25e-6         # (S/cm²) G_CAN ? in Vardalakis
+                hhparam[self.PID["G_Leak"]]      = 0.01e-3       # (S/cm²)
+                hhparam[self.PID["E_Na"]]        = +55.0         # (mV)
+                hhparam[self.PID["E_K"]]         = -90.0         # (mV)
+                hhparam[self.PID["E_Ca"]]        = 0.0           # (mV)
+                hhparam[self.PID["E_Leak"]]      = -65.0         # (mV)
+                # hhparam[self.PID["E_M"]]         = -100.0         # (mV)
+                # hhparam[self.PID["E_L"]]         = +120.0         # (mV)
+                # hhparam[self.PID["E_T"]]         = -20.0         # (mV)
+                
+                if not("nonoise" in nt):
+                    hhparam[self.PID["mu"]]      = 0.048         # 0.05
+                    hhparam[self.PID["theta"]]   = 8.0           # 8.0
+                    hhparam[self.PID["sigma"]]   = 0.11          # 0.1
+                if not("nostim" in nt):
+                    hhparam[self.PID["i_stim"]]  = 0.01/3 # 0.0075 # 0.03          # (mA/cm²)
+                hhparam[self.PID["v_init"]]      = -70.0         # (mV)
+
+
 
         # Apply pre-mul of conductances/currents
         hhparam[self.PID["G_Na"]]        = hhparam[self.PID["G_Na"]]   * 1e3*(dt/cmem)

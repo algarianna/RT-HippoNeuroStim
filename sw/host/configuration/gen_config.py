@@ -31,7 +31,7 @@ class NetwConfParams:
     en_step_stim=False
     step_stim_delay_ms=0
     step_stim_duration_ms=0
-    local_save_path="/home/ubuntu/bioemus/data/"
+    local_save_path="./"
     en_randomize_hh_params=False
     val_randomize_hh_params=0.10
     org_wsyninh = 1.0
