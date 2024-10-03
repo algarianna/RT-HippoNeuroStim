@@ -65,7 +65,7 @@ class Ionrates:
         :param int fp_width: Width of sfixed
         :param int fp_dec: Bit coding decimal part of sfixed
         """
-        if   nrn_model == "pospischil":
+        if   nrn_model == "pospischil": #pyramidal
             model = Pospischil()
 
             # From : https://link.springer.com/article/10.1007/s00422-008-0263-8
@@ -167,6 +167,68 @@ class Ionrates:
             # writeFPGASimFileFloat(gen_fpga_sim_files, "fp_r1h_T.txt",  hT_r1,  len(v_ramp))
             # writeFPGASimFileFloat(gen_fpga_sim_files, "fp_r2h_T.txt",  hT_r2,  len(v_ramp))
             
+
+            return [m_rates1, m_rates2, h_rates1, h_rates2]
+
+        elif   nrn_model == "interneuron": #
+            model = Interneuron()
+
+            # From : https://elifesciences.org/articles/87356
+            # functions
+            # taux        = lambda alpha,beta : 1/(alpha + beta)
+            # xinf        = lambda alpha,beta : 1/(1+beta/alpha)
+            
+            if False: # Table rate second order correct for Crank-Nicholson
+                r1          = lambda xinf, taux, dt: (taux - dt/2) / (taux + dt/2)
+                r2          = lambda xinf, taux, dt: (xinf*dt) / (taux + dt/2)
+                r1_hines    = lambda alpha, beta, dt: (1 - (dt/2)*(alpha+beta))/(1 + (dt/2)*(alpha+beta))
+                r2_hines    = lambda alpha, beta, dt: (alpha*dt)/(1 + (dt/2)*(alpha+beta))
+            else: # Table rate euler
+                r1          = lambda xinf, taux, dt: 1-dt/taux
+                r2          = lambda xinf, taux, dt: (dt*xinf)/taux
+                r1_hines    = lambda alpha, beta, dt: 1-dt*(alpha+beta)
+                r2_hines    = lambda alpha, beta, dt: dt*alpha
+
+            mNa_r1, mNa_r2, hNa_r1, hNa_r2  = ([] for _ in range(4))
+            mK_r1, mK_r2                    = ([] for _ in range(2))
+            ones                            = [1.0]*len(v_ramp)
+            m_rates1, m_rates2              = ([] for _ in range(2))
+            h_rates1, h_rates2              = ([] for _ in range(2))
+
+            ###########################################################################
+
+
+            # Generate rate tables
+            for v in v_ramp:
+                # Na
+                mNa_r1.append( r1_hines(model.alpha_m_Na(v), model.beta_m_Na(v), dt))
+                mNa_r2.append( r2_hines(model.alpha_m_Na(v), model.beta_m_Na(v), dt))
+                hNa_r1.append( r1_hines(model.alpha_h_Na(v), model.beta_h_Na(v), dt))
+                hNa_r2.append( r2_hines(model.alpha_h_Na(v), model.beta_h_Na(v), dt))
+                # K
+                mK_r1.append( r1_hines(model.alpha_m_K(v), model.beta_m_K(v), dt) )
+                mK_r2.append( r2_hines(model.alpha_m_K(v), model.beta_m_K(v), dt) )
+
+                
+            m_rates1.append(mNa_r1) ; m_rates2.append(mNa_r2)   # Na
+            m_rates1.append(mK_r1)  ; m_rates2.append(mK_r2)    # K
+        
+            h_rates1.append(hNa_r1) ; h_rates2.append(hNa_r2)   # Na
+            h_rates1.append(ones)   ; h_rates2.append(ones)     # K            
+
+            writeFPGASimFile(gen_fpga_sim_files, "r1m_Na.txt", mNa_r1, len(v_ramp), SFI.ION.WIDTH, SFI.ION.DEC)
+            writeFPGASimFile(gen_fpga_sim_files, "r2m_Na.txt", mNa_r2, len(v_ramp), SFI.ION.WIDTH, SFI.ION.DEC)
+            writeFPGASimFile(gen_fpga_sim_files, "r1h_Na.txt", hNa_r1, len(v_ramp), SFI.ION.WIDTH, SFI.ION.DEC)
+            writeFPGASimFile(gen_fpga_sim_files, "r2h_Na.txt", hNa_r2, len(v_ramp), SFI.ION.WIDTH, SFI.ION.DEC)
+            writeFPGASimFile(gen_fpga_sim_files, "r1m_K.txt",  mK_r1,  len(v_ramp), SFI.ION.WIDTH, SFI.ION.DEC)
+            writeFPGASimFile(gen_fpga_sim_files, "r2m_K.txt",  mK_r2,  len(v_ramp), SFI.ION.WIDTH, SFI.ION.DEC)
+            
+            # writeFPGASimFileFloat(gen_fpga_sim_files, "fp_r1m_Na.txt", mNa_r1, len(v_ramp))
+            # writeFPGASimFileFloat(gen_fpga_sim_files, "fp_r2m_Na.txt", mNa_r2, len(v_ramp))
+            # writeFPGASimFileFloat(gen_fpga_sim_files, "fp_r1h_Na.txt", hNa_r1, len(v_ramp))
+            # writeFPGASimFileFloat(gen_fpga_sim_files, "fp_r2h_Na.txt", hNa_r2, len(v_ramp))
+            # writeFPGASimFileFloat(gen_fpga_sim_files, "fp_r1m_K.txt",  mK_r1,  len(v_ramp))
+            # writeFPGASimFileFloat(gen_fpga_sim_files, "fp_r2m_K.txt",  mK_r2,  len(v_ramp))          
 
             return [m_rates1, m_rates2, h_rates1, h_rates2]
 
@@ -342,3 +404,31 @@ class Pospischil:
     def calc_h_T(self, v, hpre, dt) -> np.float64: 
         dx = (self.xinf_T_h(v)-hpre)/self.taux_T_h(v)
         return forwardEuler(dx, hpre, dt)
+    
+class Interneuron:
+    V_T         = -55       # (mV) adjust spike threshold
+    V_X         = 2         # (mV)
+    TAU_MAX     = 1e3       # (ms)
+            
+    # Na ---------------------------------------------------------------------
+    # m
+    def alpha_m_Na(self, v) -> np.longdouble: return ((0.1*(v-self.V_T+34)) / (1-exp(-0.1*(v-self.V_T+35)))) # v-self.V_T = V_m?
+    def beta_m_Na(self, v) -> np.longdouble: return ((4*(-(v-self.V_T+60))) / 18)
+    def  calc_m_Na(self, v, mpre, dt) -> np.float64: 
+        dx = self.alpha_m_Na(v)*(1-mpre) - self.beta_m_Na(v)*mpre
+        return forwardEuler(dx, mpre, dt)
+    
+    # h
+    def alpha_h_Na(self, v)-> np.longdouble: return 0.07*exp(-(v-self.V_T+58)/20)
+    def beta_h_Na(self, v)-> np.longdouble: return 1/(1+exp(-0.1*(v-self.V_T+28)))
+    def calc_h_Na(self, v, hpre, dt)-> np.float64: 
+        dx = self.alpha_h_Na(v)*(1-hpre) - self.beta_h_Na(v)*hpre
+        return forwardEuler(dx, hpre, dt)
+
+    # K ---------------------------------------------------------------------
+    # m
+    def alpha_m_K(self, v)-> np.longdouble: return (0.01*(v-self.V_T+34)) / (1-exp(-0.01(v-self.V_T+34)))
+    def beta_m_K(self, v)-> np.longdouble: return 0.125*exp(-(v-self.V_T+44)/80)
+    def calc_m_K(self, v, mpre, dt)-> np.float64:
+        dx = self.alpha_m_K(v)*(1-mpre) - self.beta_m_K(v)*mpre
+        return forwardEuler(dx, mpre, dt)
