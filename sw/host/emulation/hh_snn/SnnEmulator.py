@@ -19,9 +19,9 @@ from fxpmath import Fxp
 from configuration.file_managers.HwConfigFile import *
 from configuration.file_managers.SwConfigFile import *
 
-from sw.host.configuration.neurons.Hhparam_Hippo   import *
-from sw.host.configuration.neurons.Ionrates_pyramidal  import RATE_VMIN, RATE_VMAX, RATE_STEP, RATE_TABLE_SIZE
-from sw.host.configuration.neurons.Ionrates_pyramidal  import Pospischil
+from sw.host.configuration.neurons.Hhparam   import *
+from sw.host.configuration.neurons.Ionrates  import RATE_VMIN, RATE_VMAX, RATE_STEP, RATE_TABLE_SIZE
+from sw.host.configuration.neurons.Ionrates  import Pospischil
 from configuration.synapses.Synapses import *
 from configuration.utility.Utility   import SFI
 
