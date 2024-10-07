@@ -18,8 +18,8 @@ import pandas as pd
 
 from configuration.file_managers.HwConfigFile     import *
 from configuration.file_managers.SwConfigFile     import *
-from sw.host.configuration.neurons.Ionrates     import *
-from sw.host.configuration.neurons.Hhparam          import *
+from configuration.neurons.Ionrates     import *
+from configuration.neurons.Hhparam          import *
 from configuration.synapses.Synapses              import *
 from configuration.network_models.OrgStructures   import *
 from configuration.network_models.OrgStructures   import nrncode

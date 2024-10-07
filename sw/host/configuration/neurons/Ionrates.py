@@ -347,23 +347,23 @@ class Pospischil:
             
     # Na ---------------------------------------------------------------------
     # m
-    def alpha_m_Na(self, v) -> np.longdouble: return ((-0.32*(v-self.V_T+42)) / (exp(-(v-self.V_T+42)/4)-1)) # v-self.V_T = V_m?
-    def beta_m_Na(self, v) -> np.longdouble: return ((+0.28*(v-self.V_T+15)) / (exp((v-self.V_T+15)/5)-1))
-    def  calc_m_Na(self, v, mpre, dt) -> np.float64: 
+    def alpha_m_Na(self, v) -> np.longdouble: return ((-0.32*(v-self.V_T-13)) / (exp(-(v-self.V_T-13)/4)-1)) # v-self.V_T = V_m? yes
+    def beta_m_Na(self, v) -> np.longdouble: return ((+0.28*(v-self.V_T-40)) / (exp(-(v-self.V_T-40)/5)-1))
+    def calc_m_Na(self, v, mpre, dt) -> np.float64: 
         dx = self.alpha_m_Na(v)*(1-mpre) - self.beta_m_Na(v)*mpre
         return forwardEuler(dx, mpre, dt)
     
     # h
-    def alpha_h_Na(self, v)-> np.longdouble: return 0.128*exp(-(v-self.V_T+38)/18)
-    def beta_h_Na(self, v)-> np.longdouble: return 4/(1+exp(-(v-self.V_T+15)/5))
+    def alpha_h_Na(self, v)-> np.longdouble: return 0.128*exp(-(v-self.V_T-17)/18)
+    def beta_h_Na(self, v)-> np.longdouble: return 4/(1+exp(-(v-self.V_T-40)/5))
     def calc_h_Na(self, v, hpre, dt)-> np.float64: 
         dx = self.alpha_h_Na(v)*(1-hpre) - self.beta_h_Na(v)*hpre
         return forwardEuler(dx, hpre, dt)
 
     # K ---------------------------------------------------------------------
     # m
-    def alpha_m_K(self, v)-> np.longdouble: return (-0.032*(v-self.V_T+40)) / (1+exp(-0.02*(v-self.V_T+40)))
-    def beta_m_K(self, v)-> np.longdouble: return 0.5*exp(-(v-self.V_T+45)/40)
+    def alpha_m_K(self, v)-> np.longdouble: return (-0.032*(v-self.V_T-15)) / (-1-exp(-0.02*(v-self.V_T-15)))
+    def beta_m_K(self, v)-> np.longdouble: return 0.5*exp(-(v-self.V_T-10)/40)
     def calc_m_K(self, v, mpre, dt)-> np.float64:
         dx = self.alpha_m_K(v)*(1-mpre) - self.beta_m_K(v)*mpre
         return forwardEuler(dx, mpre, dt)
@@ -377,16 +377,16 @@ class Pospischil:
         return forwardEuler(dx, mpre, dt)
 
     # L ---------------------------------------------------------------------
-    # high threshold Ca current (Reuveni). This one should be ICa
+    # high threshold Ca current (Reuveni). This one should be ICa in Vardalakis
     # m (q)
-    def alpha_m_L(self, v)-> np.longdouble: return 0.055*(-27-v) / (exp((-27-v)/17) - 1)
+    def alpha_m_L(self, v)-> np.longdouble: return 0.055*(-27-v) / (exp((-27-v)/17) - 1) # qua pero rimane solo v e non vm intesa come v-vt
     def beta_m_L(self, v)-> np.longdouble: return 0.94*exp((-75-v)/17)
     def calc_m_L(self, v, mpre, dt)-> np.float64: 
         dx = self.alpha_m_L(v)*(1-mpre) - self.beta_m_L(v)*mpre
         return forwardEuler(dx, mpre, dt)
     # h (r)
     def alpha_h_L(self,v)-> np.longdouble: return 0.000457*exp((-13.0-v)/50.0)
-    def beta_h_L(self,v)-> np.longdouble: return 0.0065 / (exp((-15.0-v)/28.0))
+    def beta_h_L(self,v)-> np.longdouble: return 0.0065 / (exp((-15.0-v)/28.0) + 1.0)
     def calc_h_L(self, v, hpre, dt)-> np.float64:
         dx = self.alpha_h_L(v)*(1-hpre) - self.beta_h_L(v)*hpre
         return forwardEuler(dx, hpre, dt)
