@@ -18,20 +18,20 @@ import pandas as pd
 
 from configuration.file_managers.HwConfigFile     import *
 from configuration.file_managers.SwConfigFile     import *
-from configuration.neurons.Ionrates     import *
-from configuration.neurons.Hhparam          import *
+from configuration.neurons.Ionrates               import *
+from configuration.neurons.Hhparam                import *
 from configuration.synapses.Synapses              import *
-from configuration.network_models.OrgStructures   import *
-from configuration.network_models.OrgStructures   import nrncode
+from configuration.network_models.OrgStructures   import * #edit
+from configuration.network_models.OrgStructures   import nrncode #edit
 from configuration.utility.settings               import _SOFTWARE_VERSION, _HW_MAX_NB_NEURONS, _HW_DT
 
 class NetwConfParams:
     model="custom"
-    emulation_time_s=300
+    emulation_time_s=30
     en_step_stim=False
     step_stim_delay_ms=0
     step_stim_duration_ms=0
-    local_save_path="./"
+    local_save_path="/savedconfig"
     en_randomize_hh_params=False
     val_randomize_hh_params=0.10
     org_wsyninh = 1.0
@@ -42,6 +42,9 @@ class NetwConfParams:
     org_wsyn_out=1.0
     org_inh_ratio=0.2
 
+def connection_probability(dest, src, sigma, P_max): #Arianna for syn Gaussian_1D
+    distance = abs(dest - src)
+    return P_max * np.exp(- (distance ** 2) / (2 * sigma ** 2))
 
 def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="./"):
     # System parameters ####################################################################
@@ -66,7 +69,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     swconfig_builder.parameters["emulation_time_s"]            = netw_conf_params.emulation_time_s
     swconfig_builder.parameters["sel_nrn_vmem_dac"]            = [n for n in range(8)]
     swconfig_builder.parameters["sel_nrn_vmem_dma"]            = [n for n in range(16)]
-    swconfig_builder.parameters["save_local_spikes"]           = False
+    swconfig_builder.parameters["save_local_spikes"]           = True
     swconfig_builder.parameters["save_local_vmem"]             = False
     swconfig_builder.parameters["save_path"]                   = netw_conf_params.local_save_path # target saving director
     swconfig_builder.parameters["en_zmq_spikes"]               = True
@@ -100,24 +103,29 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     # Custom model #################################################################
     if MODEL == "custom":
         # USER >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        tnrn    = ["FS_nonoise"]*NB_NEURONS
+        tnrn    = ["FS"]*NB_NEURONS  #brutto
 
-        # tnrn[0] = "FS"
-        # for i in range(0,511,1):
-        #     tnrn[i]  = "FSorg"
-        # for i in range(512,1023,1):
-        #     tnrn[i]  = "RSorg"
+        inh_nrn_nb = 100
+        exc_nrn_nb = 924
+        inh_idx = range(0,inh_nrn_nb-1,1)
+        exc_idx = range(inh_nrn_nb,1023,1)
+        tnrn[0] = "FS"
+        for i in inh_idx: # inh_nrn_nb = 100
+            tnrn[i]  = "FS"
+        for i in exc_idx: # exc_nrn_nb = 924
+            tnrn[i]  = "RS"
 
-        tnrn[0] = "FS_nonoise"
-        tnrn[1] = "RS_nonoise"
-        tnrn[2] = "IB_nonoise"
-        tnrn[3] = "LTS_nonoise"
+        # tnrn[0] = "FS_nonoise"
+        # tnrn[1] = "RS_nonoise"
+        # tnrn[2] = "IB_nonoise"
+        # tnrn[3] = "LTS_nonoise"
 
-        SYN_MODE = "NONE"
+        #SYN_MODE = "NONE"
         # SYN_MODE = "CHASER"
         # SYN_MODE = "RANDOM"
         # SYN_MODE = "ONE_TO_ALL"
         # SYN_MODE = "ONE_TO_ONE"
+        SYN_MODE = "GAUSSIAN_1D"
         # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -129,6 +137,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         # dest |        |
         tsyn_dict = Synapses().getDict()
         weight = 1.9
+
         for dest in range(NB_NEURONS):
             for src in range(NB_NEURONS):
 
@@ -166,6 +175,43 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                         tsyn_i = "destexhe_gabaa"
                     else:
                         tsyn_i = "destexhe_none"
+                
+                # Connecting neurons following a 1-dimensional Gaussian probability profile
+                elif SYN_MODE == "GAUSSIAN_1D":             
+                    weight_i = 0.9
+                    weight_e = 0.1
+                    II_pmax = 0.7 # Maximum probability of connection between neurons within each region
+                    IE_pmax = 0.3
+                    EI_pmax = 0.28
+                    EE_pmax = 0 #
+
+                    sigma_i = 20
+                    sigma_e = 140
+
+                    # Creation of Inhibitory synapse from FS (I) to FS (I)
+                    if dest < inh_nrn_nb and src < inh_nrn_nb:
+                        prob = connection_probability(dest, src, sigma_i, II_pmax)
+                        if (np.random.rand() < prob):
+                            tsyn_i = "destexhe_gabaa"
+                            weight = weight_i
+                    # Creation of Inhibitory synapse from FS (I) to RS (E)
+                    elif dest < inh_nrn_nb and src > inh_nrn_nb-1:
+                        prob = connection_probability(dest, src, sigma_i, IE_pmax)
+                        if (np.random.rand() < prob):
+                            tsyn_i = "destexhe_gabaa"
+                            weight = weight_i
+                    # Creation of Excitatory synapse from RS (E) to FS (I)
+                    elif dest > inh_nrn_nb-1 and src < inh_nrn_nb:
+                        prob = connection_probability(dest, src, sigma_e, EI_pmax)
+                        if (np.random.rand() < prob):
+                            tsyn_i = "destexhe_ampa"
+                            weight = weight_e
+                    # Creation of Excitatory synapse from RS (E) to RS (E)
+                    elif dest > inh_nrn_nb-1 and src > inh_nrn_nb-1:
+                        prob = connection_probability(dest, src, sigma_e, EE_pmax)
+                        if (np.random.rand() < prob):
+                            tsyn_i = "destexhe_ampa"
+                            weight = weight_e
                 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
                 tsyn_row.append(tsyn_dict[tsyn_i])
