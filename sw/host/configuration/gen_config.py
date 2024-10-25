@@ -27,7 +27,7 @@ from configuration.utility.settings               import _SOFTWARE_VERSION, _HW_
 
 class NetwConfParams:
     model="custom"
-    emulation_time_s=30
+    emulation_time_s=5
     en_step_stim=False
     step_stim_delay_ms=0
     step_stim_duration_ms=0
@@ -178,40 +178,48 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                 
                 # Connecting neurons following a 1-dimensional Gaussian probability profile
                 elif SYN_MODE == "GAUSSIAN_1D":             
-                    weight_i = 0.9
-                    weight_e = 0.1
-                    II_pmax = 0.7 # Maximum probability of connection between neurons within each region
-                    IE_pmax = 0.3
-                    EI_pmax = 0.28
-                    EE_pmax = 0 #
+                    weight_i = 0.3
+                    weight_e = 0.3
+                    
+                    II_pmax = 0#.7 # Maximum probability of connection between neurons within each region
+                    IE_pmax = 0#.3
+                    EI_pmax = 0#.28
+                    EE_pmax = 0
 
                     sigma_i = 20
                     sigma_e = 140
-
                     # Creation of Inhibitory synapse from FS (I) to FS (I)
                     if dest < inh_nrn_nb and src < inh_nrn_nb:
                         prob = connection_probability(dest, src, sigma_i, II_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_gabaa"
                             weight = weight_i
+                        else:
+                            tsyn_i = "destexhe_none"
                     # Creation of Inhibitory synapse from FS (I) to RS (E)
                     elif dest < inh_nrn_nb and src > inh_nrn_nb-1:
                         prob = connection_probability(dest, src, sigma_i, IE_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_gabaa"
                             weight = weight_i
+                        else:
+                            tsyn_i = "destexhe_none"
                     # Creation of Excitatory synapse from RS (E) to FS (I)
                     elif dest > inh_nrn_nb-1 and src < inh_nrn_nb:
                         prob = connection_probability(dest, src, sigma_e, EI_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_ampa"
                             weight = weight_e
+                        else:
+                            tsyn_i = "destexhe_none"
                     # Creation of Excitatory synapse from RS (E) to RS (E)
                     elif dest > inh_nrn_nb-1 and src > inh_nrn_nb-1:
                         prob = connection_probability(dest, src, sigma_e, EE_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_ampa"
-                            weight = weight_e
+                            weight = 0
+                        else:
+                            tsyn_i = "destexhe_none"
                 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
                 tsyn_row.append(tsyn_dict[tsyn_i])
