@@ -26,8 +26,8 @@ import warnings
 NRN_EXC     = 0
 NRN_INH     = 1
 
-nrncode     = { NRN_EXC: "RSorg",   # Excitatory neuron is customized RS from "HHparam.py"
-                NRN_INH: "FSorg"}   # Inhibitory neuron is customized FS from "HHparam.py"
+nrncode     = { NRN_EXC: "RS",   # Excitatory neuron is customized FS from "HHparam.py"
+                NRN_INH: "FS"}   # Inhibitory neuron is customized FS from "HHparam.py"
 
 # Synapses model
 SYN_NONE    = 0

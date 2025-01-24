@@ -9,7 +9,7 @@ stim = np.zeros(NB_NRN, dtype=np.uint32)
 # stim[   0] = 1000
 # stim[ 1023] = 2000
 # stim[1023] = 2000
-stim[0 : 1024] = 500
+stim[0 : 1024] = 500 # step every secpnd??
 
 def main():
     context = zmq.Context()

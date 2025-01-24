@@ -15,13 +15,20 @@
 import numpy as np
 from tqdm import tqdm
 from fxpmath import Fxp
+import sys
+# sys.path.append('/Users/Arianna/Documents/RT-HippoNeuroStim/sw/host/configuration')
+# sys.path.append('/Users/Arianna/Documents/RT-HippoNeuroStim/sw/host/configuration/file_managers')
+# sys.path.append('/Users/Arianna/Documents/RT-HippoNeuroStim/sw/host/configuration/neurons')
+# sys.path.append('/Users/Arianna/Documents/RT-HippoNeuroStim/sw/host/configuration/synapses')
+# sys.path.append('/Users/Arianna/Documents/RT-HippoNeuroStim/sw/host/configuration/utility')
+sys.path.append('../../configuration')
 
-from configuration.file_managers.HwConfigFile import *
+# from HwConfigFile import *
 from configuration.file_managers.SwConfigFile import *
 
-from sw.host.configuration.neurons.Hhparam   import *
-from sw.host.configuration.neurons.Ionrates  import RATE_VMIN, RATE_VMAX, RATE_STEP, RATE_TABLE_SIZE
-from sw.host.configuration.neurons.Ionrates  import Pospischil
+from configuration.neurons.Hhparam   import *
+from configuration.neurons.Ionrates  import RATE_VMIN, RATE_VMAX, RATE_STEP, RATE_TABLE_SIZE
+from configuration.neurons.Ionrates  import Pospischil
 from configuration.synapses.Synapses import *
 from configuration.utility.Utility   import SFI
 
