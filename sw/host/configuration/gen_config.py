@@ -15,6 +15,9 @@
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
+from scipy.spatial.transform import Rotation as R
+from random import sample as smplf
+
 
 from configuration.file_managers.HwConfigFile     import *
 from configuration.file_managers.SwConfigFile     import *
@@ -42,9 +45,14 @@ class NetwConfParams:
     org_wsyn_out=1.0
     org_inh_ratio=0.2
 
-def connection_probability(dest, src, sigma, P_max): #Arianna for syn Gaussian_1D
-    distance = abs(dest - src)
-    return P_max * np.exp(- (distance ** 2) / (2 * sigma ** 2))
+def connection_probability_1D(desti, srce, sigma, p_max): #Arianna for syn Gaussian_1D
+    distance = abs(desti - srce)
+    return p_max * np.exp(- (distance ** 2) / (2 * sigma ** 2))
+
+def connection_probability(pos, dest, src, sigma, p_max): #Arianna for syn Gaussian_3D
+    d = math.sqrt( (pos[src][0]-pos[dest][0])**2 + (pos[src][1]-pos[dest][1])**2 + (pos[src][2]-pos[dest][2])**2)
+    return p_max * np.exp(- (d ** 2) / (2 * sigma ** 2))
+
 
 def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="./"):
     # System parameters ####################################################################
@@ -104,9 +112,40 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     if MODEL == "custom":
         # USER >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         tnrn    = ["FS"]*NB_NEURONS  #brutto
-
-        inh_nrn_nb = 100
+        
         exc_nrn_nb = 924
+        inh_nrn_nb = 100
+        
+        #Area CA1
+        #Excitatory neurons positions
+        pos = np.load(os.path.join('configuration', 'neurons_positions', 'full', 'CA1_E-stipple-10000.npy'))
+        pos = np.hstack((pos, np.zeros((len(pos), 1)))) # add z-axis
+        
+        r = R.from_euler('x', 180, degrees=True) # rotation matrix for fixing rotated y-positions from stippling program
+        pos = r.apply(pos)
+        scale = round(1000/818,6)*1e-6 #umetre
+        pos *= scale
+        pos[:,2] += 15e-3*np.random.rand(len(pos))
+        pos = pos[smplf(range(10000), exc_nrn_nb),:]
+        # pos = parse_positions(os.path.join('positions', 'CA1_exc.txt'))
+        idx_E = np.argsort(pos[:,2]) # sort neurons by increasing z-coordinate
+        pos_E = pos[idx_E]
+
+        # Inhibitory neurons positions
+        pos = np.load(os.path.join('configuration', 'neurons_positions', 'full', 'CA1_I-stipple-1000.npy'))
+        pos = np.hstack((pos, np.zeros((len(pos), 1)))) # add z-axis
+        
+        r = R.from_euler('x', 180, degrees=True) # rotation matrix for fixing rotated y-positions from stippling program
+        pos = r.apply(pos)
+        scale = round(1000/818,6)*1e-6 #umetre
+        pos *= scale
+        pos[:,2] += 15e-3*np.random.rand(len(pos))
+        pos = pos[smplf(range(1000), inh_nrn_nb),:]
+        # pos = parse_positions(os.path.join('positions', 'CA1_exc.txt'))
+        idx_I = np.argsort(pos[:,2]) # sort neurons by increasing z-coordinate
+        pos_I = pos[idx_I]
+
+        pos = [*pos_I, *pos_E]
         inh_idx = range(0,inh_nrn_nb-1,1)
         exc_idx = range(inh_nrn_nb,1023,1)
         tnrn[0] = "FS"
@@ -125,7 +164,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         # SYN_MODE = "RANDOM"
         # SYN_MODE = "ONE_TO_ALL"
         # SYN_MODE = "ONE_TO_ONE"
-        SYN_MODE = "GAUSSIAN_1D"
+        SYN_MODE = "GAUSSIAN_3D"
         # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
 
@@ -177,20 +216,20 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                         tsyn_i = "destexhe_none"
                 
                 # Connecting neurons following a 1-dimensional Gaussian probability profile
-                elif SYN_MODE == "GAUSSIAN_1D":             
+                elif SYN_MODE == "GAUSSIAN_3D":             
                     weight_i = 0.3
                     weight_e = 0.3
                     
-                    II_pmax = 0#.7 # Maximum probability of connection between neurons within each region
+                    II_pmax = 0.7#.7 # Maximum probability of connection between neurons intra region
                     IE_pmax = 0#.3
                     EI_pmax = 0#.28
                     EE_pmax = 0
 
-                    sigma_i = 20
-                    sigma_e = 140
+                    sigma_i_intra = 350e-6 # umetre     20 non ricordo da dove venisse fuori
+                    sigma_e_intra = 25001e-6 # umetre     140 non ricordo da dove venisse fuori
                     # Creation of Inhibitory synapse from FS (I) to FS (I)
                     if dest < inh_nrn_nb and src < inh_nrn_nb:
-                        prob = connection_probability(dest, src, sigma_i, II_pmax)
+                        prob = connection_probability(pos, dest, src, sigma_i_intra, II_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_gabaa"
                             weight = weight_i
@@ -198,7 +237,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                             tsyn_i = "destexhe_none"
                     # Creation of Inhibitory synapse from FS (I) to RS (E)
                     elif dest < inh_nrn_nb and src > inh_nrn_nb-1:
-                        prob = connection_probability(dest, src, sigma_i, IE_pmax)
+                        prob = connection_probability(pos, dest, src, sigma_i_intra, IE_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_gabaa"
                             weight = weight_i
@@ -206,7 +245,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                             tsyn_i = "destexhe_none"
                     # Creation of Excitatory synapse from RS (E) to FS (I)
                     elif dest > inh_nrn_nb-1 and src < inh_nrn_nb:
-                        prob = connection_probability(dest, src, sigma_e, EI_pmax)
+                        prob = connection_probability(pos, dest, src, sigma_e_intra, EI_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_ampa"
                             weight = weight_e
@@ -214,7 +253,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                             tsyn_i = "destexhe_none"
                     # Creation of Excitatory synapse from RS (E) to RS (E)
                     elif dest > inh_nrn_nb-1 and src > inh_nrn_nb-1:
-                        prob = connection_probability(dest, src, sigma_e, EE_pmax)
+                        prob = connection_probability(pos, dest, src, sigma_e_intra, EE_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_ampa"
                             weight = 0
