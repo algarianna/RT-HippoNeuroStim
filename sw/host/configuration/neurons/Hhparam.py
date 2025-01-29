@@ -74,13 +74,13 @@ class Hhparam:
 
         if nt[0] == "FS":
             cmem                             = 1.0           # (µF/cm²)
-            area_cm2                         = 67e-4*67e-4   # (cm²)
+            area_cm2                         = 14e-5         # (cm²) bioemus: 67e-4*67e-4 = 4.489e-5
             hhparam[self.PID["G_Na"]]        = 50e-3         # (S/cm²)
             hhparam[self.PID["G_Kd"]]        =  5e-3         # (S/cm²)
             hhparam[self.PID["G_M"]]         = 0.0           # (S/cm²)
             hhparam[self.PID["G_L"]]         = 0.0           # (S/cm²)
             hhparam[self.PID["G_T"]]         = 0.0           # (S/cm²)
-            hhparam[self.PID["G_Leak"]]      = 0.15e-3      # (S/cm²)
+            hhparam[self.PID["G_Leak"]]      = 0.15e-3       # (S/cm²)
             hhparam[self.PID["E_Na"]]        = +50.0         # (mV)
             hhparam[self.PID["E_K"]]         = -100.0        # (mV)
             hhparam[self.PID["E_Ca"]]        = 0.0           # (mV)
@@ -95,7 +95,7 @@ class Hhparam:
 
         elif nt[0] == "RS":
             cmem                             = 1.0           # (µF/cm²)
-            area_cm2                         = 97e-4*97e-4   # (cm²)
+            area_cm2                         = 29e-5         # (cm²) 97e-4*97e-4 = 9.409e-5
             hhparam[self.PID["G_Na"]]        = 50e-3         # (S/cm²)
             hhparam[self.PID["G_Kd"]]        =  5e-3         # (S/cm²)
             hhparam[self.PID["G_M"]]         = 0.7e-3    # (S/cm²)
