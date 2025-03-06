@@ -31,7 +31,7 @@ from configuration.utility.settings               import _SOFTWARE_VERSION, _HW_
 class NetwConfParams:
     model="custom"
     emulation_time_s=5
-    en_step_stim=False
+    en_step_stim=True
     step_stim_delay_ms=0
     step_stim_duration_ms=0
     local_save_path="/savedconfig"
@@ -58,7 +58,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     # System parameters ####################################################################
     # Hardware platform (from KR260 platform)
     sw_ver              = _SOFTWARE_VERSION
-    NB_NEURONS          = _HW_MAX_NB_NEURONS
+    NB_NEURONS          = 1024 # _HW_MAX_NB_NEURONS
     dt                  = _HW_DT
 
     # Files
@@ -75,10 +75,11 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     swconfig_builder                                           = SwConfigFile()
     swconfig_builder.parameters["fpath_hwconfig"]              = "/home/ubuntu/bioemus/config/hwconfig_" + config_fname + ".txt"
     swconfig_builder.parameters["emulation_time_s"]            = netw_conf_params.emulation_time_s
+    swconfig_builder.parameters["nb_neurons"]                  = NB_NEURONS # default
     swconfig_builder.parameters["sel_nrn_vmem_dac"]            = [n for n in range(8)]
     swconfig_builder.parameters["sel_nrn_vmem_dma"]            = [n for n in range(16)]
     swconfig_builder.parameters["save_local_spikes"]           = True
-    swconfig_builder.parameters["save_local_vmem"]             = False
+    swconfig_builder.parameters["save_local_vmem"]             = True
     swconfig_builder.parameters["save_path"]                   = netw_conf_params.local_save_path # target saving director
     swconfig_builder.parameters["en_zmq_spikes"]               = True
     swconfig_builder.parameters["en_zmq_vmem"]                 = False
@@ -111,10 +112,11 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     # Custom model #################################################################
     if MODEL == "custom":
         # USER >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        tnrn    = ["FS"]*NB_NEURONS  #brutto
-        
         exc_nrn_nb = 924
         inh_nrn_nb = 100
+        tnrn = ["RS"]*NB_NEURONS
+        tnrn[-100:] = ["FS"]*100         
+        
         
         #Area CA1
         #Excitatory neurons positions
@@ -146,20 +148,22 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         pos_I = pos[idx_I]
 
         pos = [*pos_I, *pos_E]
-        inh_idx = range(0,inh_nrn_nb-1,1)
-        exc_idx = range(inh_nrn_nb,1023,1)
-        tnrn[0] = "FS"
-        for i in inh_idx: # inh_nrn_nb = 100
-            tnrn[i]  = "FS"
-        for i in exc_idx: # exc_nrn_nb = 924
-            tnrn[i]  = "RS"
+        #inh_idx = range(0,inh_nrn_nb-1,1)
+        #exc_idx = range(inh_nrn_nb,1023,1)
+        # tnrn[0] = "RS"
+        # for i in inh_idx: # inh_nrn_nb = 100
+        #     tnrn[i]  = "RS"
+        # for i in exc_idx: # exc_nrn_nb = 924
+        #     tnrn[i]  = "RS"
+
+        
 
         # tnrn[0] = "FS_nonoise"
         # tnrn[1] = "RS_nonoise"
         # tnrn[2] = "IB_nonoise"
         # tnrn[3] = "LTS_nonoise"
 
-        #SYN_MODE = "NONE"
+        # SYN_MODE = "NONE"
         # SYN_MODE = "CHASER"
         # SYN_MODE = "RANDOM"
         # SYN_MODE = "ONE_TO_ALL"
@@ -217,48 +221,66 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                 
                 # Connecting neurons following a 1-dimensional Gaussian probability profile
                 elif SYN_MODE == "GAUSSIAN_3D":             
-                    weight_i = 0.3
-                    weight_e = 0.3
+                    weight_i = 0.4
+                    weight_e = 0.4
                     
-                    II_pmax = 0.7#.7 # Maximum probability of connection between neurons intra region
-                    IE_pmax = 0#.3
-                    EI_pmax = 0#.28
+                    II_pmax = 0.9 # Maximum probability of connection between neurons intra region
+                    IE_pmax = 0.5
+                    EI_pmax = 0.5 # 0.28
                     EE_pmax = 0
 
                     sigma_i_intra = 350e-6 # umetre     20 non ricordo da dove venisse fuori
                     sigma_e_intra = 25001e-6 # umetre     140 non ricordo da dove venisse fuori
-                    # Creation of Inhibitory synapse from FS (I) to FS (I)
-                    if dest < inh_nrn_nb and src < inh_nrn_nb:
-                        prob = connection_probability(pos, dest, src, sigma_i_intra, II_pmax)
+
+                    # first 924 neurons are RS (E) and last 100 are FS (I)
+                    # Creation of Excitatory synapse from RS (E) to RS (E)
+
+                    # Inizializza il dizionario per il conteggio delle connessioni
+                    connection_counts = { "EE": {}, "IE": {}, "EI": {}, "II": {} }
+
+                    # Funzione per aggiornare il conteggio delle connessioni
+                    def update_connection_counts(category, dest, src):
+                        if dest not in connection_counts[category]:
+                            connection_counts[category][dest] = 0
+                        if src not in connection_counts[category]:
+                            connection_counts[category][src] = 0
+                        connection_counts[category][dest] += 1
+                        connection_counts[category][src] += 1
+
+                    if dest < exc_nrn_nb and src < exc_nrn_nb:  # EE
+                        prob = connection_probability(pos, dest, src, sigma_i_intra, EE_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_gabaa"
-                            weight = weight_i
+                            weight = weight_e
+                            update_connection_counts("EE", dest, src)
                         else:
                             tsyn_i = "destexhe_none"
-                    # Creation of Inhibitory synapse from FS (I) to RS (E)
-                    elif dest < inh_nrn_nb and src > inh_nrn_nb-1:
+                    elif dest < exc_nrn_nb and src > exc_nrn_nb - 1:  # IE
                         prob = connection_probability(pos, dest, src, sigma_i_intra, IE_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_gabaa"
                             weight = weight_i
+                            update_connection_counts("IE", dest, src)
                         else:
                             tsyn_i = "destexhe_none"
-                    # Creation of Excitatory synapse from RS (E) to FS (I)
-                    elif dest > inh_nrn_nb-1 and src < inh_nrn_nb:
+                    elif dest > exc_nrn_nb - 1 and src < exc_nrn_nb:  # EI
                         prob = connection_probability(pos, dest, src, sigma_e_intra, EI_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_ampa"
                             weight = weight_e
+                            update_connection_counts("EI", dest, src)
                         else:
                             tsyn_i = "destexhe_none"
-                    # Creation of Excitatory synapse from RS (E) to RS (E)
-                    elif dest > inh_nrn_nb-1 and src > inh_nrn_nb-1:
-                        prob = connection_probability(pos, dest, src, sigma_e_intra, EE_pmax)
+                    elif dest > exc_nrn_nb - 1 and src > exc_nrn_nb - 1:  # II
+                        prob = connection_probability(pos, dest, src, sigma_e_intra, II_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_ampa"
                             weight = 0
+                            update_connection_counts("II", dest, src)
                         else:
                             tsyn_i = "destexhe_none"
+
+                            
                 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
                 tsyn_row.append(tsyn_dict[tsyn_i])
@@ -408,6 +430,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     hw_cfg_file.wsyn = wsyn
 
     # Write file
+    # swconfig_builder.parameters["nb_neurons"] = ???? # TODO
     swconfig_builder.write(os.path.join(local_dirpath_save, "swconfig_" + config_fname + ".json"))  # save path of swconfig on local
     hw_cfg_file.write(os.path.join(local_dirpath_save, "hwconfig_" + config_fname + ".txt"))        # save path of hwconfig on local
 
@@ -438,4 +461,4 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
             bioemus_org.to_csv(f, index=False, sep=';')
 
 
-    return [hw_cfg_file, swconfig_builder]
+    return [hw_cfg_file, swconfig_builder, connection_counts]
