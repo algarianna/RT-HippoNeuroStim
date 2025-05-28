@@ -23,7 +23,7 @@ import sys
 # sys.path.append('/Users/Arianna/Documents/RT-HippoNeuroStim/sw/host/configuration/utility')
 sys.path.append('../../configuration')
 
-# from HwConfigFile import *
+from configuration.file_managers.HwConfigFile import *
 from configuration.file_managers.SwConfigFile import *
 
 from configuration.neurons.Hhparam   import *
@@ -64,7 +64,7 @@ class SnnEmulator:
 
         # Declare variables
         self.v              = np.zeros( [self.nb_nrn, len(self.t)], dtype=dtype)
-        self.detect         = np.zeros( self.nb_nrn, dtype=np.bool8)
+        self.detect         = np.zeros( self.nb_nrn, dtype=np.bool)
         
         self.mprev_Na       = np.zeros( self.nb_nrn, dtype=dtype )
         self.mprev_K        = np.zeros( self.nb_nrn, dtype=dtype )
