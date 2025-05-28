@@ -244,7 +244,7 @@ class HippoStructure:
                 tsyn.append(line.split(','))
         return tsyn
 
-    #def __ruleSynConSingle(self, tsyn, ndest, nsrc, tnrn_all, x_all, y_all, org_diam, pcon):
+    def __ruleSynConSingle(self, tsyn, ndest, nsrc, tnrn_all, x_all, y_all, org_diam, pcon):
         """Generate synaptic connection inside organoid based on distance between neurons
         :param tsyn: Array of synaptic types for all organoids
         :param ndest: List of destination neuron index
