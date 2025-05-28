@@ -54,6 +54,14 @@ def connection_probability(pos, dest, src, sigma, p_max): #Arianna for syn Gauss
     return p_max * np.exp(- (d ** 2) / (2 * sigma ** 2))
 
 
+def update_connection_counts(connection_counts, category, dest): # Function to update the connections count
+    # if dest not in connection_counts[category]:
+    #     connection_counts[category][dest] = 0
+    # if src not in connection_counts[category]:
+    #     connection_counts[category][src] = 0
+    connection_counts[category][dest] += 1
+
+
 def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="./"):
     # System parameters ####################################################################
     # Hardware platform (from KR260 platform)
@@ -181,8 +189,14 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         tsyn_dict = Synapses().getDict()
         weight = 1.9
 
-        for dest in range(NB_NEURONS):
-            for src in range(NB_NEURONS):
+        # Inizializza il dizionario per il conteggio delle connessioni
+        connection_counts = { "EE": {}, "IE": {}, "EI": {}, "II": {} }
+        connection_counts = { cat: [0] * NB_NEURONS for cat in ["EE", "IE", "EI", "II"]}
+        # connection_counts = { cat: [0] * (exc_nrn_nb if cat in ["EE", "IE"] else inh_nrn_nb) for cat in ["EE", "IE", "EI", "II"]}
+
+
+        for src in range(NB_NEURONS):
+            for dest in range(NB_NEURONS):
 
                 if SYN_MODE == "NONE":
                     tsyn_i = "destexhe_none"
@@ -221,38 +235,28 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                 
                 # Connecting neurons following a 1-dimensional Gaussian probability profile
                 elif SYN_MODE == "GAUSSIAN_3D":             
-                    weight_i = 0.4
-                    weight_e = 0.4
+                    weight_i = netw_conf_params.weight_i
+                    weight_e = netw_conf_params.weight_e
                     
-                    II_pmax = 0.9 # Maximum probability of connection between neurons intra region
-                    IE_pmax = 0.5
-                    EI_pmax = 0.5 # 0.28
+                    # Maximum probabilities of connection between neurons intra region
+                    II_pmax = 0.7 
+                    IE_pmax = 0.3
+                    EI_pmax = 0.05 #28
                     EE_pmax = 0
 
-                    sigma_i_intra = 350e-6 # umetre     20 non ricordo da dove venisse fuori
-                    sigma_e_intra = 25001e-6 # umetre     140 non ricordo da dove venisse fuori
+                    sigma_i_intra = 350e-3 # umetre     20 non ricordo da dove venisse fuori
+                    sigma_e_intra = 25001e-3 # umetre     140 non ricordo da dove venisse fuori
 
                     # first 924 neurons are RS (E) and last 100 are FS (I)
-                    # Creation of Excitatory synapse from RS (E) to RS (E)
-
-                    # Inizializza il dizionario per il conteggio delle connessioni
-                    connection_counts = { "EE": {}, "IE": {}, "EI": {}, "II": {} }
-
-                    # Funzione per aggiornare il conteggio delle connessioni
-                    def update_connection_counts(category, dest, src):
-                        if dest not in connection_counts[category]:
-                            connection_counts[category][dest] = 0
-                        if src not in connection_counts[category]:
-                            connection_counts[category][src] = 0
-                        connection_counts[category][dest] += 1
-                        connection_counts[category][src] += 1
+                    # Creation of Excitatory synapse from RS (E) to RS (E)               
+                    
 
                     if dest < exc_nrn_nb and src < exc_nrn_nb:  # EE
                         prob = connection_probability(pos, dest, src, sigma_i_intra, EE_pmax)
                         if (np.random.rand() < prob):
-                            tsyn_i = "destexhe_gabaa"
+                            tsyn_i = "destexhe_ampa"
                             weight = weight_e
-                            update_connection_counts("EE", dest, src)
+                            update_connection_counts(connection_counts, "EE", dest)
                         else:
                             tsyn_i = "destexhe_none"
                     elif dest < exc_nrn_nb and src > exc_nrn_nb - 1:  # IE
@@ -260,7 +264,10 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_gabaa"
                             weight = weight_i
-                            update_connection_counts("IE", dest, src)
+                            update_connection_counts(connection_counts, "IE", dest)
+                            print(prob)
+                            print()
+                            print(connection_counts["IE"])
                         else:
                             tsyn_i = "destexhe_none"
                     elif dest > exc_nrn_nb - 1 and src < exc_nrn_nb:  # EI
@@ -268,19 +275,18 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_ampa"
                             weight = weight_e
-                            update_connection_counts("EI", dest, src)
+                            update_connection_counts(connection_counts, "EI", dest)
                         else:
                             tsyn_i = "destexhe_none"
                     elif dest > exc_nrn_nb - 1 and src > exc_nrn_nb - 1:  # II
                         prob = connection_probability(pos, dest, src, sigma_e_intra, II_pmax)
                         if (np.random.rand() < prob):
-                            tsyn_i = "destexhe_ampa"
+                            tsyn_i = "destexhe_gabaa"
                             weight = 0
-                            update_connection_counts("II", dest, src)
+                            update_connection_counts(connection_counts, "II", dest)
                         else:
                             tsyn_i = "destexhe_none"
-
-                            
+                      
                 # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
                 tsyn_row.append(tsyn_dict[tsyn_i])
@@ -288,11 +294,18 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                     wsyn_row.append(0.0)
                 else:
                     wsyn_row.append(weight)
+            
+
 
             tsyn.append(tsyn_row)
             wsyn.append(wsyn_row)
             tsyn_row = []
             wsyn_row = []
+
+        connection_counts["EE"] = connection_counts["EE"][0:exc_nrn_nb]
+        connection_counts["IE"] = connection_counts["IE"][0:exc_nrn_nb]
+        connection_counts["II"] = connection_counts["II"][-inh_nrn_nb:]
+        connection_counts["EI"] = connection_counts["EI"][-inh_nrn_nb:]
 
     #   ██████  ██████   ██████   █████  ███    ██  ██████  ██ ██████  
     #  ██    ██ ██   ██ ██       ██   ██ ████   ██ ██    ██ ██ ██   ██ 
