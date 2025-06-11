@@ -239,13 +239,13 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                     weight_e = netw_conf_params.weight_e
                     
                     # Maximum probabilities of connection between neurons intra region
-                    II_pmax = 0.7 
-                    IE_pmax = 0.3
-                    EI_pmax = 0.05 #28
-                    EE_pmax = 0
+                    II_pmax = netw_conf_params.II_pmax
+                    IE_pmax = netw_conf_params.IE_pmax
+                    EI_pmax = netw_conf_params.EI_pmax
+                    EE_pmax = netw_conf_params.EE_pmax
 
-                    sigma_i_intra = 350e-3 # umetre     20 non ricordo da dove venisse fuori
-                    sigma_e_intra = 25001e-3 # umetre     140 non ricordo da dove venisse fuori
+                    sigma_i_intra = 350e-4 # umetre     20 non ricordo da dove venisse fuori
+                    sigma_e_intra = 2500e-4 # umetre     140 non ricordo da dove venisse fuori
 
                     # first 924 neurons are RS (E) and last 100 are FS (I)
                     # Creation of Excitatory synapse from RS (E) to RS (E)               
