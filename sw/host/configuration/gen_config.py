@@ -29,7 +29,7 @@ from configuration.network_models.OrgStructures   import nrncode #edit
 from configuration.utility.settings               import _SOFTWARE_VERSION, _HW_MAX_NB_NEURONS, _HW_DT
 
 class NetwConfParams:
-    model="custom"
+    model="hypercolumn"
     emulation_time_s=5
     en_step_stim=True
     step_stim_delay_ms=0
@@ -120,8 +120,8 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     # Custom model #################################################################
     if MODEL == "custom":
         # USER >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
-        exc_nrn_nb = 924
-        inh_nrn_nb = 100
+        exc_nrn_nb = 930
+        inh_nrn_nb = 94
         tnrn = ["RS"]*NB_NEURONS
         tnrn[-100:] = ["FS"]*100         
         
@@ -135,7 +135,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         pos = r.apply(pos)
         scale = round(1000/818,6)*1e-6 #umetre
         pos *= scale
-        pos[:,2] += 15e-3*np.random.rand(len(pos))
+        pos[:,2] += 1.5e-3*np.random.rand(len(pos)) # Arianna: in the original model it was 15 mm, in this reduced version we use a thin layer of 1.5 mm to make it more omogeneous
         pos = pos[smplf(range(10000), exc_nrn_nb),:]
         # pos = parse_positions(os.path.join('positions', 'CA1_exc.txt'))
         idx_E = np.argsort(pos[:,2]) # sort neurons by increasing z-coordinate
@@ -149,7 +149,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         pos = r.apply(pos)
         scale = round(1000/818,6)*1e-6 #umetre
         pos *= scale
-        pos[:,2] += 15e-3*np.random.rand(len(pos))
+        pos[:,2] += 1.5e-3*np.random.rand(len(pos))
         pos = pos[smplf(range(1000), inh_nrn_nb),:]
         # pos = parse_positions(os.path.join('positions', 'CA1_exc.txt'))
         idx_I = np.argsort(pos[:,2]) # sort neurons by increasing z-coordinate
@@ -306,6 +306,188 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         connection_counts["IE"] = connection_counts["IE"][0:exc_nrn_nb]
         connection_counts["II"] = connection_counts["II"][-inh_nrn_nb:]
         connection_counts["EI"] = connection_counts["EI"][-inh_nrn_nb:]
+
+    # ██   ██ ██    ██ ██████  ███████ ██████   ██████  ██████  ██      ██    ██ ███    ███ ███    ██ 
+    # ██   ██  ██  ██  ██   ██ ██      ██   ██ ██      ██    ██ ██      ██    ██ ████  ████ ████   ██ 
+    # ███████   ████   ██████  █████   ██████  ██      ██    ██ ██      ██    ██ ██ ████ ██ ██ ██  ██ 
+    # ██   ██    ██    ██      ██      ██   ██ ██      ██    ██ ██      ██    ██ ██  ██  ██ ██  ██ ██ 
+    # ██   ██    ██    ██      ███████ ██   ██  ██████  ██████  ███████  ██████  ██      ██ ██   ████ 
+
+    if MODEL == "hypercolumn":
+
+        tnrn = []
+        # USER >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # Layer 3
+        L3_inh_nrn_nb = 5
+        L3_exc_nrn_nb = 15
+
+        tnrn = tnrn + ["FS"] * L3_inh_nrn_nb + ["RS"] * L3_exc_nrn_nb
+
+        # Layer 2
+        L2_inh_nrn_nb = 5
+        L2_exc_nrn_nb = 15
+
+        tnrn = tnrn + ["FS"] * L2_inh_nrn_nb + ["RS"] * L2_exc_nrn_nb
+
+        # Layer 1
+        L1_inh_nrn_nb = 5
+        L1_exc_nrn_nb = 15
+
+        tnrn = tnrn + ["FS"] * L1_inh_nrn_nb + ["RS"] * L1_exc_nrn_nb      
+        
+
+        # USER: Select Synaptic mode
+
+        # SYN_MODE = "NONE"
+        # SYN_MODE = "CHASER"
+        SYN_MODE = "RANDOM"
+        # SYN_MODE = "ONE_TO_ALL"
+        # SYN_MODE = "ONE_TO_ONE"
+        # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+
+        # USER >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        # Create synaptic conncetions
+        # Synaptic types
+        #      | source |
+        # -----|--------|
+        # dest |        |
+        tsyn_dict = Synapses().getDict()
+        weight = 1.9
+
+        # Neurons index for coding easiness
+        L3 = np.arange(0             , L3_inh_nrn_nb + L3_exc_nrn_nb-1)
+        L3_inh_idx = np.arange(0, L3_inh_nrn_nb)
+        L3_exc_idx = np.arange(L3_inh_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb-1)
+
+        L2 = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb , L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb-1)
+        L2_inh_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb , L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb -1)
+        L2_exc_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb-1)
+
+        L1 = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb + L1_inh_nrn_nb + L1_exc_nrn_nb)
+        L1_inh_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb + L1_inh_nrn_nb - 1)
+        L1_exc_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb + L1_inh_nrn_nb + L1_exc_nrn_nb- 1)
+
+        layers = [L3, L2, L1] 
+        
+        # Probability of connection intra layer
+        L3_pconn_IE = 0.2
+        L3_pconn_EI = 0.2
+        L2_pconn_IE = 0.2
+        L2_pconn_EI = 0.2
+        L1_pconn_EI = 0.2
+        L1_pconn_IE = 0.2
+
+
+        for src in layers[0]:
+            for dest in layers[0]:
+
+                if SYN_MODE == "NONE":
+                    tsyn_i = "destexhe_none"
+
+                elif SYN_MODE == "CHASER":
+                    if ((src+1) == dest):
+                        tsyn_i = "destexhe_ampa"
+                    else:
+                        tsyn_i = "destexhe_none"
+
+                elif SYN_MODE == "RANDOM":
+                    #L3 FS -> RS connection
+                    if (src < L3_inh_nrn_nb) and (L3_inh_nrn_nb < dest < L3_exc_nrn_nb): 
+                        if dest != src:
+                            if (np.random.rand() < L3_pconn_IE):
+                                tsyn_i = "destexhe_gabaa"
+                            else:
+                                tsyn_i = "destexhe_none"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    #L3 RS -> FS connection
+                    elif(L3_inh_nrn_nb < dest < L3_exc_nrn_nb) and (dest < L3_inh_nrn_nb): 
+                        if dest != src:
+                            if (np.random.rand() < L3_pconn_EI):
+                                tsyn_i = "destexhe_ampa"
+                            else:
+                                tsyn_i = "destexhe_none"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    #L2 FS -> RS connection
+                    if (L3_exc_nrn_nb < src < L3_exc_nrn_nb + L2_inh_nrn_nb) and (dest > L2_inh_nrn_nb): 
+                        if dest != src:
+                            if (np.random.rand() < L2_pconn_IE):
+                                tsyn_i = "destexhe_gabaa"
+                            else:
+                                tsyn_i = "destexhe_none"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    #L2 RS -> FS connection
+                    elif(L3_inh_nrn_nb < src < L3_inh_nrn_nb + L2_inh_nrn_nb) and (dest > L2_inh_nrn_nb): 
+                        if dest != src:
+                            if (np.random.rand() < L2_pconn_EI):
+                                tsyn_i = "destexhe_ampa"
+                            else:
+                                tsyn_i = "destexhe_none"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+
+
+                    #L1 FS -> RS connection
+                    if (src < L1_inh_nrn_nb) and (dest > L1_inh_nrn_nb): 
+                        if dest != src:
+                            if (np.random.rand() < L1_pconn_IE):
+                                tsyn_i = "destexhe_gabaa"
+                            else:
+                                tsyn_i = "destexhe_none"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    #L1 RS -> FS connection
+                    elif(src < L1_inh_nrn_nb) and (dest > L1_inh_nrn_nb): 
+                        if dest != src:
+                            if (np.random.rand() < L1_pconn_EI):
+                                tsyn_i = "destexhe_ampa"
+                            else:
+                                tsyn_i = "destexhe_none"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                elif SYN_MODE == "ONE_TO_ONE":
+                    if src==0 and dest==1:
+                        tsyn_i = "destexhe_gabab"
+                    elif src==1 and dest==2:
+                        tsyn_i = "destexhe_gabab"
+                    else:
+                        tsyn_i = "destexhe_none"
+
+                elif SYN_MODE == "ONE_TO_ALL":
+                    if src==0 and dest != 0:
+                        tsyn_i = "destexhe_gabaa"
+                    else:
+                        tsyn_i = "destexhe_none"
+                                      
+                # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+
+                tsyn_row.append(tsyn_dict[tsyn_i])
+                if tsyn_i == "destexhe_none":
+                    wsyn_row.append(0.0)
+                else:
+                    wsyn_row.append(weight)
+            
+
+
+            tsyn.append(tsyn_row)
+            wsyn.append(wsyn_row)
+            tsyn_row = []
+            wsyn_row = []
+
+        connection_counts["EE"] = connection_counts["EE"][0:exc_nrn_nb]
+        connection_counts["IE"] = connection_counts["IE"][0:exc_nrn_nb]
+        connection_counts["II"] = connection_counts["II"][-inh_nrn_nb:]
+        connection_counts["EI"] = connection_counts["EI"][-inh_nrn_nb:]
+
 
     #   ██████  ██████   ██████   █████  ███    ██  ██████  ██ ██████  
     #  ██    ██ ██   ██ ██       ██   ██ ████   ██ ██    ██ ██ ██   ██ 
