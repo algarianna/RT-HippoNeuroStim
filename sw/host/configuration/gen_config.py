@@ -355,7 +355,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         tsyn_dict = Synapses().getDict()
         weight = 1.9
 
-        # Neurons index for coding easiness
+        # Neurons index for easiness
         L3 = np.arange(0             , L3_inh_nrn_nb + L3_exc_nrn_nb-1)
         L3_inh_idx = np.arange(0, L3_inh_nrn_nb)
         L3_exc_idx = np.arange(L3_inh_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb-1)
@@ -377,6 +377,20 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         L2_pconn_EI = 0.2
         L1_pconn_EI = 0.2
         L1_pconn_IE = 0.2
+
+        # Probability of connection inter layer
+        L3_L2_pconn_IE = 0.2
+        L3_L2_pconn_EI = 0.2
+        L3_L1_pconn_IE = 0.2
+        L3_L1_pconn_EI = 0.2
+        L2_L3_pconn_IE = 0.2
+        L2_L3_pconn_EI = 0.2
+        L2_L1_pconn_IE = 0.2
+        L2_L1_pconn_EI = 0.2
+        L1_L2_pconn_EI = 0.2
+        L1_L2_pconn_IE = 0.2
+        L1_L3_pconn_EI = 0.2
+        L1_L3_pconn_IE = 0.2
 
 
         for src in layers[0]:
