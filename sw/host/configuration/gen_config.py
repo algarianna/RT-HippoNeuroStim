@@ -19,6 +19,7 @@ from scipy.spatial.transform import Rotation as R
 from random import sample as smplf
 
 
+
 from configuration.file_managers.HwConfigFile     import *
 from configuration.file_managers.SwConfigFile     import *
 from configuration.neurons.Ionrates               import *
@@ -29,7 +30,7 @@ from configuration.network_models.OrgStructures   import nrncode #edit
 from configuration.utility.settings               import _SOFTWARE_VERSION, _HW_MAX_NB_NEURONS, _HW_DT
 
 class NetwConfParams:
-    model="hypercolumn"
+    model="tinytest"
     emulation_time_s=5
     en_step_stim=True
     step_stim_delay_ms=0
@@ -110,6 +111,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     tsyn_row, wsyn_row    = ([] for i in range(2))
     tsyn,     wsyn        = ([] for i in range(2))
     tnrn                  = []
+    weight = 1.9
 
     #   ██████ ██    ██ ███████ ████████  ██████  ███    ███ 
     #  ██      ██    ██ ██         ██    ██    ██ ████  ████ 
@@ -140,6 +142,9 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         # pos = parse_positions(os.path.join('positions', 'CA1_exc.txt'))
         idx_E = np.argsort(pos[:,2]) # sort neurons by increasing z-coordinate
         pos_E = pos[idx_E]
+        print((min(pos_E[:,0]), (max(pos_E[:,0]))))
+        print((min(pos_E[:,1]), (max(pos_E[:,1]))))
+        print((min(pos_E[:,2]), (max(pos_E[:,2]))))
 
         # Inhibitory neurons positions
         pos = np.load(os.path.join('configuration', 'neurons_positions', 'full', 'CA1_I-stipple-1000.npy'))
@@ -154,8 +159,13 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         # pos = parse_positions(os.path.join('positions', 'CA1_exc.txt'))
         idx_I = np.argsort(pos[:,2]) # sort neurons by increasing z-coordinate
         pos_I = pos[idx_I]
+        print((min(pos_I[:,0]), (max(pos_I[:,0]))))
+        print((min(pos_I[:,1]), (max(pos_I[:,1]))))
+        print((min(pos_I[:,2]), (max(pos_I[:,2]))))
+        
+        
 
-        pos = [*pos_I, *pos_E]
+        pos = [*pos_E, *pos_I]
         #inh_idx = range(0,inh_nrn_nb-1,1)
         #exc_idx = range(inh_nrn_nb,1023,1)
         # tnrn[0] = "RS"
@@ -195,8 +205,8 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         # connection_counts = { cat: [0] * (exc_nrn_nb if cat in ["EE", "IE"] else inh_nrn_nb) for cat in ["EE", "IE", "EI", "II"]}
 
 
-        for src in range(NB_NEURONS):
-            for dest in range(NB_NEURONS):
+        for dest in range(NB_NEURONS):
+            for src in range(NB_NEURONS):
 
                 if SYN_MODE == "NONE":
                     tsyn_i = "destexhe_none"
@@ -220,10 +230,10 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                         tsyn_i = "destexhe_none"
 
                 elif SYN_MODE == "ONE_TO_ONE":
-                    if src==0 and dest==1:
-                        tsyn_i = "destexhe_gabab"
-                    elif src==1 and dest==2:
-                        tsyn_i = "destexhe_gabab"
+                    if src==0:
+                        tsyn_i = "destexhe_gabaa"
+                    elif src==1:
+                        tsyn_i = "destexhe_ampa"
                     else:
                         tsyn_i = "destexhe_none"
 
@@ -244,22 +254,23 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                     EI_pmax = netw_conf_params.EI_pmax
                     EE_pmax = netw_conf_params.EE_pmax
 
-                    sigma_i_intra = 350e-4 # umetre     20 non ricordo da dove venisse fuori
-                    sigma_e_intra = 2500e-4 # umetre     140 non ricordo da dove venisse fuori
+                    sigma_i_intra = 350e-6 # umetre     20 non ricordo da dove venisse fuori
+                    sigma_e_intra = 2500e-6 # umetre     140 non ricordo da dove venisse fuori
 
                     # first 924 neurons are RS (E) and last 100 are FS (I)
                     # Creation of Excitatory synapse from RS (E) to RS (E)               
                     
 
-                    if dest < exc_nrn_nb and src < exc_nrn_nb:  # EE
-                        prob = connection_probability(pos, dest, src, sigma_i_intra, EE_pmax)
+                    if src < exc_nrn_nb and dest < exc_nrn_nb:  # EE
+                        prob = connection_probability(pos, dest, src, sigma_e_intra, EE_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_ampa"
                             weight = weight_e
                             update_connection_counts(connection_counts, "EE", dest)
                         else:
                             tsyn_i = "destexhe_none"
-                    elif dest < exc_nrn_nb and src > exc_nrn_nb - 1:  # IE
+
+                    elif src > (exc_nrn_nb - 1) and dest < exc_nrn_nb:  # IE
                         prob = connection_probability(pos, dest, src, sigma_i_intra, IE_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_gabaa"
@@ -270,7 +281,8 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                             print(connection_counts["IE"])
                         else:
                             tsyn_i = "destexhe_none"
-                    elif dest > exc_nrn_nb - 1 and src < exc_nrn_nb:  # EI
+
+                    elif src < exc_nrn_nb and dest > (exc_nrn_nb -1) :  # EI
                         prob = connection_probability(pos, dest, src, sigma_e_intra, EI_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_ampa"
@@ -278,11 +290,12 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                             update_connection_counts(connection_counts, "EI", dest)
                         else:
                             tsyn_i = "destexhe_none"
-                    elif dest > exc_nrn_nb - 1 and src > exc_nrn_nb - 1:  # II
-                        prob = connection_probability(pos, dest, src, sigma_e_intra, II_pmax)
+                            
+                    elif src > (exc_nrn_nb - 1) and dest > (exc_nrn_nb - 1):  # II
+                        prob = connection_probability(pos, dest, src, sigma_i_intra, II_pmax)
                         if (np.random.rand() < prob):
                             tsyn_i = "destexhe_gabaa"
-                            weight = 0
+                            weight = weight_i
                             update_connection_counts(connection_counts, "II", dest)
                         else:
                             tsyn_i = "destexhe_none"
@@ -306,6 +319,37 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         connection_counts["IE"] = connection_counts["IE"][0:exc_nrn_nb]
         connection_counts["II"] = connection_counts["II"][-inh_nrn_nb:]
         connection_counts["EI"] = connection_counts["EI"][-inh_nrn_nb:]
+        
+
+    elif MODEL == "tinytest":
+        NB_NEURONS = 2
+        tnrn = []
+        tnrn = ["FS", "RS"]
+        tsyn_dict = Synapses().getDict()
+
+        SYN_MODE = "ONE_TO_ONE"
+
+        for dest in range(NB_NEURONS):
+            for src in range(NB_NEURONS):           
+                if SYN_MODE == "ONE_TO_ONE":
+                    if src==0 and dest==1:
+                        tsyn_i = "destexhe_gabaa"
+                    # elif src==1 and dest==0:
+                    #     tsyn_i = "destexhe_ampa"
+                    else:
+                        tsyn_i = "destexhe_none"
+
+                tsyn_row.append(tsyn_dict[tsyn_i])
+                if tsyn_i == "destexhe_none":
+                    wsyn_row.append(0.0)
+                else:
+                    wsyn_row.append(weight)
+            
+            tsyn.append(tsyn_row)
+            wsyn.append(wsyn_row)
+            tsyn_row = []
+            wsyn_row = []
+
 
     # ██   ██ ██    ██ ██████  ███████ ██████   ██████  ██████  ██      ██    ██ ███    ███ ███    ██ 
     # ██   ██  ██  ██  ██   ██ ██      ██   ██ ██      ██    ██ ██      ██    ██ ████  ████ ████   ██ 
@@ -313,7 +357,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
     # ██   ██    ██    ██      ██      ██   ██ ██      ██    ██ ██      ██    ██ ██  ██  ██ ██  ██ ██ 
     # ██   ██    ██    ██      ███████ ██   ██  ██████  ██████  ███████  ██████  ██      ██ ██   ████ 
 
-    if MODEL == "hypercolumn":
+    elif MODEL == "hypercolumn":
 
         tnrn = []
         # USER >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
@@ -333,14 +377,17 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         L1_inh_nrn_nb = 5
         L1_exc_nrn_nb = 15
 
-        tnrn = tnrn + ["FS"] * L1_inh_nrn_nb + ["RS"] * L1_exc_nrn_nb      
-        
+        tnrn = tnrn + ["FS"] * L1_inh_nrn_nb + ["RS"] * L1_exc_nrn_nb 
+
+        # NB_NEURONS = L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb + L1_inh_nrn_nb + L1_inh_nrn_nb     
+        # tnrn = tnrn + ["FS"] * (1024-60)
+
 
         # USER: Select Synaptic mode
 
-        # SYN_MODE = "NONE"
+        SYN_MODE = "NONE"
         # SYN_MODE = "CHASER"
-        SYN_MODE = "RANDOM"
+        # SYN_MODE = "RANDOM"
         # SYN_MODE = "ONE_TO_ALL"
         # SYN_MODE = "ONE_TO_ONE"
         # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
@@ -356,45 +403,64 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         weight = 1.9
 
         # Neurons index for easiness
-        L3 = np.arange(0             , L3_inh_nrn_nb + L3_exc_nrn_nb-1)
+        L3 = np.arange(0             , L3_inh_nrn_nb + L3_exc_nrn_nb)
         L3_inh_idx = np.arange(0, L3_inh_nrn_nb)
-        L3_exc_idx = np.arange(L3_inh_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb-1)
+        L3_exc_idx = np.arange(L3_inh_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb)
 
-        L2 = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb , L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb-1)
-        L2_inh_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb , L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb -1)
-        L2_exc_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb-1)
+        L2 = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb , L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb)
+        L2_inh_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb , L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb)
+        L2_exc_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb)
 
         L1 = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb + L1_inh_nrn_nb + L1_exc_nrn_nb)
-        L1_inh_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb + L1_inh_nrn_nb - 1)
-        L1_exc_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb + L1_inh_nrn_nb + L1_exc_nrn_nb- 1)
+        L1_inh_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb + L1_inh_nrn_nb)
+        L1_exc_idx = np.arange(L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb, L3_inh_nrn_nb + L3_exc_nrn_nb + L2_inh_nrn_nb + L2_exc_nrn_nb + L1_inh_nrn_nb + L1_exc_nrn_nb)
 
         layers = [L3, L2, L1] 
         
         # Probability of connection intra layer
-        L3_pconn_IE = 0.2
-        L3_pconn_EI = 0.2
-        L2_pconn_IE = 0.2
-        L2_pconn_EI = 0.2
-        L1_pconn_EI = 0.2
-        L1_pconn_IE = 0.2
+        L3_pconn_IE = 0
+        L3_pconn_EI = 0
+        L2_pconn_IE = 0
+        L2_pconn_EI = 0
+        L1_pconn_EI = 0
+        L1_pconn_IE = 0
 
         # Probability of connection inter layer
-        L3_L2_pconn_IE = 0.2
-        L3_L2_pconn_EI = 0.2
-        L3_L1_pconn_IE = 0.2
-        L3_L1_pconn_EI = 0.2
-        L2_L3_pconn_IE = 0.2
-        L2_L3_pconn_EI = 0.2
-        L2_L1_pconn_IE = 0.2
-        L2_L1_pconn_EI = 0.2
-        L1_L2_pconn_EI = 0.2
-        L1_L2_pconn_IE = 0.2
-        L1_L3_pconn_EI = 0.2
-        L1_L3_pconn_IE = 0.2
+        L3_L2_pconn_IE = 0
+        L3_L2_pconn_EI = 0
+        L3_L2_pconn_II = 0
+        L3_L2_pconn_EE = 0
+
+        L3_L1_pconn_IE = 0
+        L3_L1_pconn_EI = 0
+        L3_L1_pconn_II = 0
+        L3_L1_pconn_EE = 0
+        
+        L2_L3_pconn_IE = 0
+        L2_L3_pconn_EI = 0
+        L2_L3_pconn_II = 0
+        L2_L3_pconn_EE = 0
+
+        L2_L1_pconn_IE = 0
+        L2_L1_pconn_EI = 0
+        L2_L1_pconn_II = 0
+        L2_L1_pconn_EE = 0
+        
+
+        L1_L2_pconn_EI = 0
+        L1_L2_pconn_IE = 0
+        L1_L2_pconn_II = 0
+        L1_L2_pconn_EE = 0
+
+        L1_L3_pconn_EI = 0
+        L1_L3_pconn_IE = 0
+        L1_L3_pconn_II = 0
+        L1_L3_pconn_EE = 0
+        
 
 
-        for src in layers[0]:
-            for dest in layers[0]:
+        for dest in range(NB_NEURONS):
+            for src in range(NB_NEURONS):
 
                 if SYN_MODE == "NONE":
                     tsyn_i = "destexhe_none"
@@ -407,66 +473,219 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
 
                 elif SYN_MODE == "RANDOM":
                     #L3 FS -> RS connection
-                    if (src < L3_inh_nrn_nb) and (L3_inh_nrn_nb < dest < L3_exc_nrn_nb): 
-                        if dest != src:
-                            if (np.random.rand() < L3_pconn_IE):
-                                tsyn_i = "destexhe_gabaa"
-                            else:
-                                tsyn_i = "destexhe_none"
+                    if (src in L3_inh_idx) and (dest in L3_exc_idx): 
+                        if (np.random.rand() < L3_pconn_IE):
+                            tsyn_i = "destexhe_gabaa"
                         else:
                             tsyn_i = "destexhe_none"
-
+                        
                     #L3 RS -> FS connection
-                    elif(L3_inh_nrn_nb < dest < L3_exc_nrn_nb) and (dest < L3_inh_nrn_nb): 
-                        if dest != src:
-                            if (np.random.rand() < L3_pconn_EI):
-                                tsyn_i = "destexhe_ampa"
-                            else:
-                                tsyn_i = "destexhe_none"
+                    elif( src in L3_exc_idx) and (dest in L3_inh_idx): 
+                        if (np.random.rand() < L3_pconn_EI):
+                            tsyn_i = "destexhe_ampa"
                         else:
                             tsyn_i = "destexhe_none"
-
+                    
                     #L2 FS -> RS connection
-                    if (L3_exc_nrn_nb < src < L3_exc_nrn_nb + L2_inh_nrn_nb) and (dest > L2_inh_nrn_nb): 
-                        if dest != src:
-                            if (np.random.rand() < L2_pconn_IE):
-                                tsyn_i = "destexhe_gabaa"
-                            else:
-                                tsyn_i = "destexhe_none"
+                    if (src in L2_inh_idx) and (dest in L2_exc_idx): 
+                        if (np.random.rand() < L2_pconn_IE):
+                            tsyn_i = "destexhe_gabaa"
                         else:
                             tsyn_i = "destexhe_none"
 
                     #L2 RS -> FS connection
-                    elif(L3_inh_nrn_nb < src < L3_inh_nrn_nb + L2_inh_nrn_nb) and (dest > L2_inh_nrn_nb): 
-                        if dest != src:
-                            if (np.random.rand() < L2_pconn_EI):
-                                tsyn_i = "destexhe_ampa"
-                            else:
-                                tsyn_i = "destexhe_none"
+                    elif(src in L2_exc_idx) and (dest in L2_inh_idx): 
+                        if (np.random.rand() < L2_pconn_EI):
+                            tsyn_i = "destexhe_ampa"
                         else:
                             tsyn_i = "destexhe_none"
-
-
 
                     #L1 FS -> RS connection
-                    if (src < L1_inh_nrn_nb) and (dest > L1_inh_nrn_nb): 
-                        if dest != src:
-                            if (np.random.rand() < L1_pconn_IE):
-                                tsyn_i = "destexhe_gabaa"
-                            else:
-                                tsyn_i = "destexhe_none"
+                    if (src in L1_inh_idx) and (dest in L1_exc_idx): 
+                        if (np.random.rand() < L1_pconn_IE):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+                        
+                    #L1 RS -> FS connection
+                    elif(src in L1_exc_idx) and (dest in L1_inh_idx): 
+                        if (np.random.rand() < L1_pconn_EI):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+                        
+                    #L3 -> L2 : RS -> RS connection
+                    elif(src in L3_exc_idx) and (dest in L2_exc_idx): 
+                        if (np.random.rand() < L3_L2_pconn_EE):
+                            tsyn_i = "destexhe_ampa"
                         else:
                             tsyn_i = "destexhe_none"
 
-                    #L1 RS -> FS connection
-                    elif(src < L1_inh_nrn_nb) and (dest > L1_inh_nrn_nb): 
-                        if dest != src:
-                            if (np.random.rand() < L1_pconn_EI):
-                                tsyn_i = "destexhe_ampa"
-                            else:
-                                tsyn_i = "destexhe_none"
+                    #L3 -> L2 : RS -> FS
+                    elif(src in L3_exc_idx) and (dest in L2_inh_idx): 
+                        if (np.random.rand() < L3_L2_pconn_EI):
+                            tsyn_i = "destexhe_ampa"
                         else:
                             tsyn_i = "destexhe_none"
+                    
+                    #L3 -> L2 : FS -> RS connection
+                    elif(src in L3_inh_idx) and (dest in L2_exc_idx): 
+                        if (np.random.rand() < L3_L2_pconn_IE):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    #L3 -> L2 : FS -> FS
+                    elif(src in L3_inh_idx) and (dest in L2_inh_idx): 
+                        if (np.random.rand() < L3_L2_pconn_II):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+
+                    # L2 -> L3 : RS -> RS
+                    elif(src in L2_exc_idx) and (dest in L3_exc_idx):
+                        if (np.random.rand() < L2_L3_pconn_EE):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L2 -> L3 : RS -> FS
+                    elif(src in L2_exc_idx) and (dest in L3_inh_idx):
+                        if (np.random.rand() < L2_L3_pconn_EI):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L2 -> L3 : FS -> RS
+                    elif(src in L2_inh_idx) and (dest in L3_exc_idx):
+                        if (np.random.rand() < L2_L3_pconn_IE):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L2 -> L3 : FS -> FS
+                    elif(src in L2_inh_idx) and (dest in L3_inh_idx):
+                        if (np.random.rand() < L2_L3_pconn_II):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+
+                    # L3 -> L1 : RS -> RS
+                    elif(src in L3_exc_idx) and (dest in L1_exc_idx):
+                        if (np.random.rand() < L3_L1_pconn_EE):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L3 -> L1 : RS -> FS
+                    elif(src in L3_exc_idx) and (dest in L1_inh_idx):
+                        if (np.random.rand() < L3_L1_pconn_EI):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L3 -> L1 : FS -> RS
+                    elif(src in L3_inh_idx) and (dest in L1_exc_idx):
+                        if (np.random.rand() < L3_L1_pconn_IE):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L3 -> L1 : FS -> FS
+                    elif(src in L3_inh_idx) and (dest in L1_inh_idx):
+                        if (np.random.rand() < L3_L1_pconn_II):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+
+                    # L1 -> L3 : RS -> RS
+                    elif(src in L1_exc_idx) and (dest in L3_exc_idx):
+                        if (np.random.rand() < L1_L3_pconn_EE):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L1 -> L3 : RS -> FS
+                    elif(src in L1_exc_idx) and (dest in L3_inh_idx):
+                        if (np.random.rand() < L1_L3_pconn_EI):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L1 -> L3 : FS -> RS
+                    elif(src in L1_inh_idx) and (dest in L3_exc_idx):
+                        if (np.random.rand() < L1_L3_pconn_IE):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L1 -> L3 : FS -> FS
+                    elif(src in L1_inh_idx) and (dest in L3_inh_idx):
+                        if (np.random.rand() < L1_L3_pconn_II):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L2 -> L1 : RS -> RS
+                    elif(src in L2_exc_idx) and (dest in L1_exc_idx):
+                        if (np.random.rand() < L2_L1_pconn_EE):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L2 -> L1 : RS -> FS
+                    elif(src in L2_exc_idx) and (dest in L1_inh_idx):
+                        if (np.random.rand() < L2_L1_pconn_EI):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L2 -> L1 : FS -> RS
+                    elif(src in L2_inh_idx) and (dest in L1_exc_idx):
+                        if (np.random.rand() < L2_L1_pconn_IE):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L2 -> L1 : FS -> FS
+                    elif(src in L2_inh_idx) and (dest in L1_inh_idx):
+                        if (np.random.rand() < L2_L1_pconn_II):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+
+                    # L1 -> L2 : RS -> RS
+                    elif(src in L1_exc_idx) and (dest in L2_exc_idx):
+                        if (np.random.rand() < L1_L2_pconn_EE):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L1 -> L2 : RS -> FS
+                    elif(src in L1_exc_idx) and (dest in L2_inh_idx):
+                        if (np.random.rand() < L1_L2_pconn_EI):
+                            tsyn_i = "destexhe_ampa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L1 -> L2 : FS -> RS
+                    elif(src in L1_inh_idx) and (dest in L2_exc_idx):
+                        if (np.random.rand() < L1_L2_pconn_IE):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
+                    # L1 -> L2 : FS -> FS
+                    elif(src in L1_inh_idx) and (dest in L2_inh_idx):
+                        if (np.random.rand() < L1_L2_pconn_II):
+                            tsyn_i = "destexhe_gabaa"
+                        else:
+                            tsyn_i = "destexhe_none"
+
 
                 elif SYN_MODE == "ONE_TO_ONE":
                     if src==0 and dest==1:
@@ -482,7 +701,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                     else:
                         tsyn_i = "destexhe_none"
                                       
-                # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
+            # <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
                 tsyn_row.append(tsyn_dict[tsyn_i])
                 if tsyn_i == "destexhe_none":
@@ -490,17 +709,11 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
                 else:
                     wsyn_row.append(weight)
             
-
-
             tsyn.append(tsyn_row)
             wsyn.append(wsyn_row)
             tsyn_row = []
             wsyn_row = []
 
-        connection_counts["EE"] = connection_counts["EE"][0:exc_nrn_nb]
-        connection_counts["IE"] = connection_counts["IE"][0:exc_nrn_nb]
-        connection_counts["II"] = connection_counts["II"][-inh_nrn_nb:]
-        connection_counts["EI"] = connection_counts["EI"][-inh_nrn_nb:]
 
 
     #   ██████  ██████   ██████   █████  ███    ██  ██████  ██ ██████  
@@ -670,4 +883,4 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
             bioemus_org.to_csv(f, index=False, sep=';')
 
 
-    return [hw_cfg_file, swconfig_builder, connection_counts]
+    return [hw_cfg_file, swconfig_builder]
