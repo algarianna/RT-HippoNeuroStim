@@ -426,4 +426,4 @@ class SnnEmulator:
                     self.i_Leak[n][i+1]     = i_Leak
                     self.i_noise[n][i+1]    = i_noise
 
-        return [self.t, self.v, self.spk_tab]
+        return [self.t, self.v, self.spk_tab, self.i_syn]
