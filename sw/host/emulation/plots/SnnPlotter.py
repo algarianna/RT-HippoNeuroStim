@@ -15,7 +15,7 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from configuration.file_managers.HwConfigFile import *
-from sw.host.configuration.neurons.Ionrates  import RATE_VMIN, RATE_VMAX, RATE_STEP, RATE_TABLE_SIZE
+from configuration.neurons.Ionrates  import RATE_VMIN, RATE_VMAX, RATE_STEP, RATE_TABLE_SIZE
 from emulation.hh_snn.SnnEmulator import *
 
 class SnnPlotter:
@@ -72,6 +72,7 @@ class SnnPlotter:
         fig.suptitle("Syn rates tables", fontsize=16)
         # fig.tight_layout()
         plt.show(block=False)
+
 
     def plotIonChanStates(self, nid):
         if not(self.snn_emu.STORE_CONTEXT):
@@ -158,6 +159,40 @@ class SnnPlotter:
 
             plt.show(block=False)
 
+    def plotGsyn(self):
+        plt.figure("Conductance*w*r", figsize=[10,6])
+        plt.subplot(211)
+        plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[1]*4.489e-5/self.snn_emu.v[1]) # 29e-5 excitatory synapse
+        plt.title("g*w*r Exc")
+        plt.ylabel("mA")
+        plt.xlim(2000,2075)
+
+        plt.subplot(212)
+        plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[0]*9.409e-5/self.snn_emu.v[0]) # 14e-5
+        plt.title("g*w*r Inh")
+        
+        plt.xlabel("Time (ms)")
+        plt.ylabel("mA")
+        plt.xlim(2000,2075)
+        plt.show()
+
+    def plotIsyn(self):
+        plt.figure("Synaptic current", figsize=[10,6])
+        plt.subplot(211)
+        plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[1]*4.489e-5) # 29e-5 excitatory synapse
+        plt.title("I_syn Exc")
+        plt.ylabel("mA")
+        plt.xlim(2000,2075)
+
+        plt.subplot(212)
+        plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[0]*9.409e-5) # 14e-5
+        plt.title("I_syn Inh")
+        
+        plt.xlabel("Time (ms)")
+        plt.ylabel("mA")
+        plt.xlim(2000,2075)
+        plt.show()
+
     def plotRaster(self):
         """Plot raster of the spike detected"""
         plt.figure("Raster plot")
@@ -171,7 +206,7 @@ class SnnPlotter:
     def plotVmem(self, nlist, plot_type):
         if plot_type == "all":
             for nid in nlist:
-                plt.figure("Membrane voltage N{}".format(nid))
+                plt.figure("Membrane voltage N{}".format(nid), figsize=[10,6])
                 plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.v[nid][:])
                 plt.xlabel("Time (ms)")
                 plt.ylabel("Amplitude (mV)")
@@ -180,7 +215,7 @@ class SnnPlotter:
                 plt.show(block=False)
 
         elif plot_type == "comp":
-            plt.figure("Membrane voltage")
+            plt.figure("Membrane voltage", figsize=[10,6])
             plt.xlabel("Time (ms)")
             plt.ylabel("Amplitude (mV)")
             plt.ylim([-100, 70])
@@ -192,8 +227,9 @@ class SnnPlotter:
             plt.show(block=False)
         
         elif plot_type == "subplot":
-            plt.figure("Membrane voltage")
+            plt.figure("Membrane voltage", figsize=[10,6])
             plt.xlabel("Time (ms)")
+            plt.xlim(2000,2075)
             plt.ylabel("Amplitude (mV)")
             plt.ylim([-100, 70])
 
@@ -206,6 +242,7 @@ class SnnPlotter:
                 else:
                     plt.subplot(len(nlist), 1, nid+1, sharex = ax0)
                 plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.v[nid][:])
+                plt.xlim(2000,2075)                
                 # plt.grid()
 
             plt.legend(nlist)
