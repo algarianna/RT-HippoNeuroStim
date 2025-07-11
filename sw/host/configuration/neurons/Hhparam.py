@@ -88,7 +88,7 @@ class Hhparam:
             if not("nonoise" in nt):
                 hhparam[self.PID["mu"]]      = 0.048# 0.048 originale         # 0.05
                 hhparam[self.PID["theta"]]   = 8.0           # 8.0
-                hhparam[self.PID["sigma"]]   = 0.0009          # 0.1
+                hhparam[self.PID["sigma"]]   = 0.009          # 0.1
             if not("nostim" in nt):
                 hhparam[self.PID["i_stim"]]  = 0.01 #0.1 # 0.06/3 # 0.01/3 0.0075 # 0.03          # (mA/cm²)    From Nikos: 0-1 nA for 5s -> 0 - 1e-6
             hhparam[self.PID["v_init"]]      = -70.0         # (mV)
@@ -109,7 +109,7 @@ class Hhparam:
             if not("nonoise" in nt):
                 hhparam[self.PID["mu"]]      = 0.042 # 0.01        # 0.1
                 hhparam[self.PID["theta"]]   = 8.0           # 8.0
-                hhparam[self.PID["sigma"]]   = 0.009         # 0.12
+                hhparam[self.PID["sigma"]]   = 0.09         # 0.12
             if not("nostim" in nt):
                 hhparam[self.PID["i_stim"]]  = 0.049 # 0.04 # 0.01         # (mA/cm²)
             hhparam[self.PID["v_init"]]      = -70.0         # (mV)
