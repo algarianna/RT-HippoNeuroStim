@@ -160,37 +160,41 @@ class SnnPlotter:
             plt.show(block=False)
 
     def plotGsyn(self):
-        plt.figure("Conductance*w*r", figsize=[10,6])
+        plt.figure("Conductance*w*r", figsize=[15,6])
         plt.subplot(211)
         plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[1]*4.489e-5/self.snn_emu.v[1]) # 29e-5 excitatory synapse
         plt.title("g*w*r Exc")
-        plt.ylabel("mA")
-        plt.xlim(2000,2075)
+        plt.xlim(0,2200)
+        #plt.ylim(-3e-6,0)
+        shared_ylim = plt.gca().get_ylim()
 
         plt.subplot(212)
         plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[0]*9.409e-5/self.snn_emu.v[0]) # 14e-5
         plt.title("g*w*r Inh")
         
         plt.xlabel("Time (ms)")
-        plt.ylabel("mA")
-        plt.xlim(2000,2075)
+        plt.xlim(0,2200)
+        plt.ylim(-1.5e-7,1.5e-7)
+
         plt.show()
 
     def plotIsyn(self):
-        plt.figure("Synaptic current", figsize=[10,6])
+        plt.figure("Synaptic current", figsize=[15,6])
         plt.subplot(211)
-        plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[1]*4.489e-5) # 29e-5 excitatory synapse
+        plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[1]) # *4.489e-5  29e-5 excitatory synapse
         plt.title("I_syn Exc")
         plt.ylabel("mA")
-        plt.xlim(2000,2075)
+        plt.xlim(0,2200)
+        shared_ylim = plt.gca().get_ylim()
 
         plt.subplot(212)
-        plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[0]*9.409e-5) # 14e-5
+        plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.i_syn[0]) #*9.409e-5 14e-5
         plt.title("I_syn Inh")
         
         plt.xlabel("Time (ms)")
         plt.ylabel("mA")
-        plt.xlim(2000,2075)
+        plt.xlim(0,2200)
+        # plt.ylim(shared_ylim)
         plt.show()
 
     def plotRaster(self):
@@ -203,50 +207,84 @@ class SnnPlotter:
             plt.scatter(x/self.snn_emu.dt*1e-3, y, color="black", marker= ".", s=10)
         plt.show(block=False)
 
+    def getFiringRate(self, nid):
+        """Get Firing Rates"""
+        spks = [x[1] for x in self.snn_emu.spk_tab]
+        spks_nid = spks.count(nid)
+        FR = spks_nid/self.snn_emu.stim_dur_ms[0]*1e3
+        return FR
+            
+
     def plotVmem(self, nlist, plot_type):
-        if plot_type == "all":
-            for nid in nlist:
-                plt.figure("Membrane voltage N{}".format(nid), figsize=[10,6])
-                plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.v[nid][:])
-                plt.xlabel("Time (ms)")
-                plt.ylabel("Amplitude (mV)")
-                plt.ylim([-100, 70])
-                plt.title("V_mem N{}".format(nid))
-                plt.show(block=False)
+        # if plot_type == "all":
+        #     for nid in nlist:
+        #         plt.figure("Membrane voltage N{}".format(nid), figsize=[10,6])
+        #         plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.v[nid][:])
+        #         plt.xlabel("Time (ms)")
+        #         plt.ylabel("Amplitude (mV)")
+        #         plt.ylim([-100, 70])
+        #         plt.title("V_mem N{}".format(nid))
+        #         plt.show(block=False)
 
-        elif plot_type == "comp":
-            plt.figure("Membrane voltage", figsize=[10,6])
-            plt.xlabel("Time (ms)")
-            plt.ylabel("Amplitude (mV)")
-            plt.ylim([-100, 70])
+        # elif plot_type == "comp":
+        #     plt.figure("Membrane voltage", figsize=[10,6])
+        #     plt.xlabel("Time (ms)")
+        #     plt.ylabel("Amplitude (mV)")
+        #     plt.ylim([-100, 70])
 
-            for nid in nlist:
-                plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.v[nid][:])
-            plt.legend(nlist)
-            plt.suptitle("Compare membrane voltage", fontsize=16)
-            plt.show(block=False)
+        #     for nid in nlist:
+        #         plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.v[nid][:])
+        #     plt.legend(nlist)
+        #     plt.suptitle("Compare membrane voltage", fontsize=16)
+        #     plt.show(block=False)
         
-        elif plot_type == "subplot":
-            plt.figure("Membrane voltage", figsize=[10,6])
-            plt.xlabel("Time (ms)")
-            plt.xlim(2000,2075)
-            plt.ylabel("Amplitude (mV)")
-            plt.ylim([-100, 70])
+        # if plot_type == "subplot":
+        #     plt.figure("Membrane voltage", figsize=[15,6])
+        #     plt.xlabel("Time (ms)")
+        #     plt.xlim(2000,2075)
+        #     plt.ylabel("Amplitude (mV)")
+        #     plt.ylim([-100, 70])
 
+        #     if len(nlist) < 1:
+        #         return
+            
+        #     for i, nid in enumerate(nlist):
+        #         if i == 0:
+        #             ax0 = plt.subplot(len(nlist), 1, nid+1)
+        #         else:
+        #             plt.subplot(len(nlist), 1, nid+1, sharex = ax0)
+        #         plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.v[nid][:])
+        #         plt.xlim(2000,2200)                
+        #         # plt.grid()
+
+        #     plt.legend(nlist)
+        #     plt.suptitle("Compare membrane voltage", fontsize=16)
+        #     plt.show(block=False)
+        if plot_type == "subplot":
             if len(nlist) < 1:
                 return
-            
-            for i, nid in enumerate(nlist):
-                if i == 0:
-                    ax0 = plt.subplot(len(nlist), 1, nid+1)
-                else:
-                    plt.subplot(len(nlist), 1, nid+1, sharex = ax0)
-                plt.plot(self.snn_emu.t/self.snn_emu.dt*1e-3, self.snn_emu.v[nid][:])
-                plt.xlim(2000,2075)                
-                # plt.grid()
 
-            plt.legend(nlist)
-            plt.suptitle("Compare membrane voltage", fontsize=16)
+            fig, axes = plt.subplots(len(nlist), 1, figsize=[15, 6], sharex=True, sharey=True)
+            #fig.suptitle("Compare membrane voltage", fontsize=16)
+
+            time = self.snn_emu.t / self.snn_emu.dt * 1e-3
+            titles = ["Vmem FS neuron", "Vmem FS2 neuron"]
+
+            for i, nid in enumerate(nlist):
+                ax = axes[i] if len(nlist) > 1 else axes  # axes è un array solo se >1 subplot
+                ax.plot(time, self.snn_emu.v[nid][:])
+                ax.set_xlim(1020, 1220)
+                ax.set_ylim([-100, 200])
+                ax.set_ylabel("Amplitude (mV)")
+                ax.set_title(titles[i])  # Titolo specifico per ogni subplot
+
+
+                if i == len(nlist) - 1:
+                    ax.set_xlabel("Time (ms)")
+
+            axes[0].legend(nlist)  # Legenda su primo subplot (modificabile)
+
+            plt.tight_layout(rect=[0, 0.03, 1, 0.95])
             plt.show(block=False)
 
 

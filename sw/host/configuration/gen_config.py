@@ -32,7 +32,7 @@ from configuration.utility.settings               import _SOFTWARE_VERSION, _HW_
 class NetwConfParams:
     model="tinytest"
     emulation_time_s=5
-    en_step_stim=True
+    en_step_stim=False
     step_stim_delay_ms=0
     step_stim_duration_ms=0
     local_save_path="/savedconfig"
@@ -323,19 +323,20 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
 
     elif MODEL == "tinytest":
         NB_NEURONS = 2
-        tnrn = []
-        tnrn = ["FS", "RS"]
+        tnrn = ["FS", "FS_2"]
         tsyn_dict = Synapses().getDict()
 
-        SYN_MODE = "ONE_TO_ONE"
+        SYN_MODE =  "NONE" #"ONE_TO_ONE"
 
         for dest in range(NB_NEURONS):
-            for src in range(NB_NEURONS):           
-                if SYN_MODE == "ONE_TO_ONE":
+            for src in range(NB_NEURONS):
+                if SYN_MODE == "NONE":
+                    tsyn_i = "destexhe_none"           
+                elif SYN_MODE == "ONE_TO_ONE":
                     if src==0 and dest==1:
                         tsyn_i = "destexhe_gabaa"
-                    # elif src==1 and dest==0:
-                    #     tsyn_i = "destexhe_ampa"
+                    elif src==1 and dest==0:
+                        tsyn_i = "destexhe_ampa"
                     else:
                         tsyn_i = "destexhe_none"
 
