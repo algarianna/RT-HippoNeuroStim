@@ -70,7 +70,7 @@ class Hhparam:
         :returns: list of parameters, mebrane capacity and area
         """
         hhparam = [0.0]*NB_HHPARAM
-        nt = nrn_type.split('_')
+        nt = nrn_type.split('_')   # because of this line, do not put an underscore in a neurons' name aside from the _nonoise or _nostim notation
 
         if nt[0] == "FS":
             cmem                             = 1.0           # (µF/cm²)
@@ -90,15 +90,15 @@ class Hhparam:
                 hhparam[self.PID["theta"]]   = 8.0           # 8.0
                 hhparam[self.PID["sigma"]]   = 0.009          # 0.1
             if not("nostim" in nt):
-                hhparam[self.PID["i_stim"]]  = 0.07 #0.01 #0.1 # 0.06/3 # 0.01/3 0.0075 # 0.03          # (mA/cm²)    From Nikos: 0-1 nA for 5s -> 0 - 1e-6
+                hhparam[self.PID["i_stim"]]  = 0.0091 #0.01 #0.1 # 0.06/3 # 0.01/3 0.0075 # 0.03          # (mA/cm²)    From Nikos: 0-1 nA for 5s -> 0 - 1e-6
             hhparam[self.PID["v_init"]]      = -70.0         # (mV)
         
-        if nt[0] == "FS_2":
+        if nt[0] == "FS2":
             cmem                             = 1.0           # (µF/cm²)
-            area_cm2                         = 4.489e-5 # 14e-5         # (cm²) bioemus: 67e-4*67e-4 = 4.489e-5
+            area_cm2                         = 9.409e-5 # 14e-5         # (cm²) bioemus: 67e-4*67e-4 = 4.489e-5
             hhparam[self.PID["G_Na"]]        = 50e-3         # (S/cm²)
             hhparam[self.PID["G_Kd"]]        =  5e-3         # (S/cm²)
-            hhparam[self.PID["G_M"]]         = 0.0           # (S/cm²)
+            hhparam[self.PID["G_M"]]         = 0           # (S/cm²)
             hhparam[self.PID["G_L"]]         = 0.0           # (S/cm²)
             hhparam[self.PID["G_T"]]         = 0.0           # (S/cm²)
             hhparam[self.PID["G_Leak"]]      = 0.15e-3       # (S/cm²)
@@ -111,7 +111,7 @@ class Hhparam:
                 hhparam[self.PID["theta"]]   = 8.0           # 8.0
                 hhparam[self.PID["sigma"]]   = 0.009          # 0.1
             if not("nostim" in nt):
-                hhparam[self.PID["i_stim"]]  = 0.0 #0.01 #0.1 # 0.06/3 # 0.01/3 0.0075 # 0.03          # (mA/cm²)    From Nikos: 0-1 nA for 5s -> 0 - 1e-6
+                hhparam[self.PID["i_stim"]]  = 0.0105 #0.01 #0.1 # 0.06/3 # 0.01/3 0.0075 # 0.03          # (mA/cm²)    From Nikos: 0-1 nA for 5s -> 0 - 1e-6
             hhparam[self.PID["v_init"]]      = -70.0         # (mV)
 
         elif nt[0] == "RS":
