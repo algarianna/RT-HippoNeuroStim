@@ -124,7 +124,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
         # USER >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         exc_nrn_nb = 930
         inh_nrn_nb = 94
-        tnrn = ["RS"]*NB_NEURONS
+        tnrn = ["FS_2"]*NB_NEURONS
         tnrn[-100:] = ["FS"]*100         
         
         
@@ -323,7 +323,7 @@ def gen_config(config_name:str, netw_conf_params:NetwConfParams, save_path:str="
 
     elif MODEL == "tinytest":
         NB_NEURONS = 2
-        tnrn = ["FS", "FS_2"]
+        tnrn = ["FS", "FS2"]
         tsyn_dict = Synapses().getDict()
 
         SYN_MODE =  "NONE" #"ONE_TO_ONE"
