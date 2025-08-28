@@ -7,3 +7,5 @@ The RT-HippoNeuroStim project aims at translating the hippocampal model previous
 
 Google Doc with some notes and plots : https://docs.google.com/presentation/d/1um6OQrIW1_Xp6RgCnTMgu9dV6YDV8syyD1kohrXjEjA/edit?usp=sharing
 
+Jupyter notebook to add to jupyther folder in memstim-HH. Here are a few additions to study neurons properties to compare with Bioemus ones https://drive.google.com/file/d/1B494ED_GNrf82l_mU6n6OeYI8GNVPapX/view?usp=sharing 
+
