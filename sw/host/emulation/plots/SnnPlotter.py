@@ -17,6 +17,15 @@ import matplotlib.pyplot as plt
 from configuration.file_managers.HwConfigFile import *
 from configuration.neurons.Ionrates  import RATE_VMIN, RATE_VMAX, RATE_STEP, RATE_TABLE_SIZE
 from emulation.hh_snn.SnnEmulator import *
+import pandas as pd
+import matplotlib.pyplot as plt
+import sys
+import os
+
+folder_path = os.path.abspath("C:Users/Arianna/Documents/memstim-hh/jupiter")
+
+if folder_path not in sys.path:
+    sys.path.append(folder_path)
 
 class SnnPlotter:
     def __init__(self, snn_emu:SnnEmulator):
@@ -207,11 +216,12 @@ class SnnPlotter:
             plt.scatter(x/self.snn_emu.dt*1e-3, y, color="black", marker= ".", s=10)
         plt.show(block=False)
 
-    def getFiringRate(self, nid):
+    def getFiringRate(self, nid, t0):
         """Get Firing Rates"""
-        spks = [x[1] for x in self.snn_emu.spk_tab]
+        t0 = self.snn_emu.dt*t0
+        spks = [x[1] for x in self.snn_emu.spk_tab if x[0]>t0]
         spks_nid = spks.count(nid)
-        FR = spks_nid/self.snn_emu.stim_dur_ms[0]*1e3
+        FR = spks_nid/(self.snn_emu.stim_dur_ms[0]-t0)*1e3
         return FR
             
 
@@ -271,9 +281,9 @@ class SnnPlotter:
             titles = ["Vmem FS neuron", "Vmem FS2 neuron"]
 
             for i, nid in enumerate(nlist):
-                ax = axes[i] if len(nlist) > 1 else axes  # axes è un array solo se >1 subplot
+                ax = axes[0] if len(nlist) > 1 else axes  # axes è un array solo se >1 subplot
                 ax.plot(time, self.snn_emu.v[nid][:])
-                ax.set_xlim(1020, 1220)
+                ax.set_xlim(1000, 1100)
                 ax.set_ylim([-100, 200])
                 ax.set_ylabel("Amplitude (mV)")
                 ax.set_title(titles[i])  # Titolo specifico per ogni subplot
@@ -286,6 +296,46 @@ class SnnPlotter:
 
             plt.tight_layout(rect=[0, 0.03, 1, 0.95])
             plt.show(block=False)
+    
+    def plotVmem_FS(self):
+        time = self.snn_emu.t / self.snn_emu.dt * 1e-3
+        fig, axes = plt.subplots(2, 1, figsize=[15, 6], sharex=True, sharey=True)
+
+
+
+        axes[0].plot(time, self.snn_emu.v[0][:])
+        axes[0].set_xlim(0, 100)
+        axes[0].set_ylim([-100, 100])
+        axes[0].set_ylabel("Amplitude (mV)")
+        axes[0].set_title("Vmem FS neuron Bioemus")
+
+        file_path = "C:/Users/Arianna/Documents/memstim-hh/jupyter/voltage_data_Nikos_FS.csv"
+        df = pd.read_csv(file_path)
+
+        axes[1].plot(df['time(ms)'], df['voltage']*1000)
+        axes[1].set_ylabel('Amplitude (mV)')
+        axes[1].set_title('Vmem FS neuron memstimHH')
+
+        axes[1].set_xlabel("Time (ms)")
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.show(block=False)
+    
+    def plotVmem_FS_memstim(self):
+        file_path = "C:/Users/Arianna/Documents/memstim-hh/jupyter/voltage_data_Nikos_FS.csv"
+        df = pd.read_csv(file_path)
+        fig, axs = plt.subplots(1, 1, figsize=[15, 6], sharex=True, sharey=True)
+
+        axs.plot(df['time(ms)'], df['voltage']*1000)
+        axs.set_xlim(0, 1000)
+
+        axs.set_ylabel('Amplitude (mV)')
+        axs.set_title('Vmem FS neuron memstimHH')
+
+        axs.set_xlabel("Time (ms)")
+        plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+        plt.show(block=False)
+
+
 
 
     # def plot(self, nlist, plot_type):
